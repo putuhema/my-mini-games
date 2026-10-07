@@ -27,7 +27,7 @@ import PawPrintIcon from 'phosphor-svelte/lib/PawPrintIcon';
 import BirdIcon from 'phosphor-svelte/lib/BirdIcon';
 import SnowflakeIcon from 'phosphor-svelte/lib/SnowflakeIcon';
 import UmbrellaIcon from 'phosphor-svelte/lib/UmbrellaIcon';
-import YinyangIcon from 'phosphor-svelte/lib/YinyangIcon';
+import YinYangIcon from 'phosphor-svelte/lib/YinYangIcon';
 import AlienIcon from 'phosphor-svelte/lib/AlienIcon';
 import BoneIcon from 'phosphor-svelte/lib/BoneIcon';
 import PentagramIcon from 'phosphor-svelte/lib/PentagramIcon';
@@ -57,7 +57,7 @@ export const SYMBOL_ICON: Record<KeypadSymbol, Icon> = {
 	bird: BirdIcon,
 	snowflake: SnowflakeIcon,
 	umbrella: UmbrellaIcon,
-	yinyang: YinyangIcon,
+	yinyang: YinYangIcon,
 	alien: AlienIcon,
 	bone: BoneIcon,
 	pentagram: PentagramIcon,
