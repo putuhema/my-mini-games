@@ -116,6 +116,25 @@ export const burgerResult = v.object({
 
 export const difficulty = v.union(v.literal('easy'), v.literal('normal'), v.literal('hard'));
 
+/** Our Little Creature: a walk from one point to another, starting at `at` and taking `dur` ms. */
+export const creatureMotion = v.object({
+	fx: v.number(),
+	fy: v.number(),
+	tx: v.number(),
+	ty: v.number(),
+	at: v.number(),
+	dur: v.number(),
+	/** Waypoints around the furniture, flattened as x, y, x, y... */
+	via: v.optional(v.array(v.number()))
+});
+
+const creatureNeeds = v.object({
+	hunger: v.number(),
+	happiness: v.number(),
+	energy: v.number(),
+	cleanliness: v.number()
+});
+
 export default defineSchema({
 	rooms: defineTable({
 		code: v.string(),
@@ -275,6 +294,129 @@ export default defineSchema({
 		playerId: v.string(),
 		lastSeen: v.number()
 	}).index('by_roomId_and_playerId', ['roomId', 'playerId']),
+
+	/** Our Little Creature: a couple's shared room. See convex/pets.ts. */
+	creatureCouples: defineTable({
+		code: v.string(),
+		/** Day 1. Growth goes by the calendar from here. */
+		startedAt: v.number(),
+		players: v.array(
+			v.object({ id: v.string(), name: v.string(), shirt: v.string(), hair: v.string() })
+		),
+		/** Gifts and toys sitting on the floor. Bounded by DECOR_SLOTS. */
+		decor: v.array(
+			v.object({
+				key: v.string(),
+				item: v.string(),
+				x: v.number(),
+				y: v.number(),
+				from: v.optional(v.string()),
+				/** Moved to the cat bed by a mischievous cat. */
+				stolen: v.optional(v.boolean())
+			})
+		),
+		/** The shared light switch and radio. Lights default to on. */
+		lightsOff: v.optional(v.boolean()),
+		radioOn: v.optional(v.boolean()),
+		/** The cup the cat knocked off the table, until someone picks it up. */
+		cupDown: v.optional(v.boolean())
+	}).index('by_code', ['code']),
+
+	/** The couple's one cat. Movement, speech and the current activity live here so both
+	 * screens draw the same thing. */
+	creatures: defineTable({
+		coupleId: v.id('creatureCouples'),
+		name: v.string(),
+		/** Coat colour and pattern; see COATS in convex/creature/world.ts. */
+		coat: v.string(),
+		stage: v.union(
+			v.literal('box'),
+			v.literal('kitten'),
+			v.literal('young'),
+			v.literal('teen'),
+			v.literal('adult')
+		),
+		/** When the kitten came out of its box. */
+		outAt: v.optional(v.number()),
+		/** Players who have said hello to the box. */
+		greetedBy: v.array(v.string()),
+		evolution: v.optional(
+			v.union(v.literal('chonk'), v.literal('floof'), v.literal('sleek'), v.literal('forest'))
+		),
+		/** Players who have seen the evolution reveal. */
+		evolutionSeen: v.array(v.string()),
+		/** Needs as of `needsAt`; see needsAt() in convex/creature/world.ts. */
+		needs: creatureNeeds,
+		needsAt: v.number(),
+		traits: v.record(v.string(), v.number()),
+		xp: v.number(),
+		motion: creatureMotion,
+		/** Eating, playing, being petted… shown from `start` until `until`. */
+		activity: v.optional(
+			v.object({ kind: v.string(), start: v.number(), until: v.number(), by: v.optional(v.string()) })
+		),
+		sleep: v.optional(v.object({ since: v.number(), until: v.number() })),
+		say: v.optional(v.object({ text: v.string(), at: v.number() })),
+		/** A toy in play: a thrown ball or a laser dot, from `at` until the cat gets it at `pickup`. */
+		toy: v.optional(
+			v.object({ kind: v.string(), x: v.number(), y: v.number(), at: v.number(), pickup: v.number() })
+		),
+		/** Who last cared for the pet and when, to notice both partners playing together. */
+		lastCare: v.optional(v.object({ by: v.string(), at: v.number() })),
+		lastSaidAt: v.optional(v.number()),
+		wateredAt: v.optional(v.number()),
+		/** One-off moments already written to the memory book. */
+		firsts: v.array(v.string()),
+		/** When the autonomy loop is next due; it stops when nobody is in the room. */
+		tickAt: v.optional(v.number())
+	}).index('by_coupleId', ['coupleId']),
+
+	/** Where each player stands, plus their heartbeat. High-churn, so kept off the couple. */
+	creaturePresence: defineTable({
+		coupleId: v.id('creatureCouples'),
+		playerId: v.string(),
+		motion: creatureMotion,
+		lastSeen: v.number(),
+		online: v.boolean(),
+		/** The latest emote and chat bubble over this player's head. */
+		emote: v.optional(v.object({ kind: v.string(), at: v.number() })),
+		chat: v.optional(v.object({ text: v.string(), at: v.number() }))
+	}).index('by_coupleId_and_playerId', ['coupleId', 'playerId']),
+
+	/** Everything that happened in the room, for "While you were away…". */
+	creatureLog: defineTable({
+		coupleId: v.id('creatureCouples'),
+		playerId: v.optional(v.string()),
+		icon: v.string(),
+		text: v.string()
+	}).index('by_coupleId', ['coupleId']),
+
+	/** Gifts and letters left for a partner (or the pet), claimed when they next arrive. */
+	creatureGifts: defineTable({
+		coupleId: v.id('creatureCouples'),
+		senderId: v.string(),
+		recipientId: v.optional(v.string()),
+		item: v.string(),
+		message: v.optional(v.string()),
+		claimedAt: v.optional(v.number())
+	}).index('by_coupleId_and_recipientId_and_claimedAt', ['coupleId', 'recipientId', 'claimedAt']),
+
+	/** The memory book. */
+	creatureMemories: defineTable({
+		coupleId: v.id('creatureCouples'),
+		day: v.number(),
+		icon: v.string(),
+		text: v.string()
+	}).index('by_coupleId', ['coupleId']),
+
+	/** One small decision a day. Votes stay hidden until both are in. */
+	creatureEvents: defineTable({
+		coupleId: v.id('creatureCouples'),
+		day: v.string(),
+		eventId: v.string(),
+		votes: v.array(v.object({ playerId: v.string(), choice: v.string() })),
+		result: v.optional(v.object({ choice: v.string(), agreed: v.boolean(), text: v.string() }))
+	}).index('by_coupleId_and_day', ['coupleId', 'day']),
 
 	/** Web Push subscriptions, one per device, for turn reminders. */
 	pushSubscriptions: defineTable({

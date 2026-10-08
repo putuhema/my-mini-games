@@ -264,6 +264,41 @@ export const sfx = {
 		tone({ freq: G6 * 1.335, type: 'square', at: 0.16, dur: 0.35, gain: 0.06 });
 	}),
 
+	/** The creature says something: a little two-note chirp. */
+	chirp: play(() => {
+		const base = 880 + Math.random() * 220;
+		tone({ freq: base, to: base * 1.3, type: 'triangle', dur: 0.08, gain: 0.12 });
+		tone({ freq: base * 1.2, to: base * 1.5, type: 'triangle', at: 0.09, dur: 0.1, gain: 0.1 });
+	}),
+
+	/** Eating: three soft crunches. */
+	munch: play(() => {
+		[0, 0.22, 0.44].forEach((at) => noise({ at, dur: 0.07, gain: 0.16, freq: 1400, q: 1.5 }));
+	}),
+
+	/** Bath time: bubbly splashes. */
+	splash: play(() => {
+		noise({ dur: 0.35, gain: 0.14, freq: 900, q: 0.8 });
+		[0.05, 0.15, 0.27].forEach((at, i) => tone({ freq: 500 + i * 180, to: 900 + i * 200, at, dur: 0.07, gain: 0.08 }));
+	}),
+
+	/** The cat says something: a little meow. */
+	meow: play(() => {
+		const base = 620 + Math.random() * 160;
+		tone({ freq: base, to: base * 1.35, type: 'triangle', dur: 0.12, gain: 0.1, vibrato: { rate: 18, depth: 12 } });
+		tone({ freq: base * 1.35, to: base * 0.8, type: 'triangle', at: 0.11, dur: 0.22, gain: 0.09, vibrato: { rate: 14, depth: 10 } });
+	}),
+
+	/** Being petted: a soft rumbling purr. */
+	purr: play(() => {
+		for (let i = 0; i < 8; i++) noise({ at: i * 0.09, dur: 0.07, gain: 0.07, freq: 140, q: 0.7, type: 'lowpass' });
+	}),
+
+	/** Throwing the ball: a quick whoosh. */
+	whoosh: play(() => {
+		noise({ dur: 0.3, gain: 0.12, freq: 1800, q: 0.6 });
+	}),
+
 	/** Winning fanfare. */
 	win: play(() => {
 		const notes: [number, number, number][] = [
@@ -280,3 +315,47 @@ export const sfx = {
 		tone({ freq: E5, type: 'triangle', at: 0.39, dur: 0.6, gain: 0.08 });
 	})
 };
+
+// ---- The radio in Our Little Creature: a soft little loop while it's on ----
+
+const LOOP: [number, number, number][] = [
+	[E5, 0, 0.4],
+	[G5, 0.5, 0.4],
+	[C6, 1, 0.8],
+	[G5, 2, 0.4],
+	[E5, 2.5, 0.4],
+	[587.33, 3, 0.8],
+	[C5, 4, 0.4],
+	[E5, 4.5, 0.4],
+	[G5, 5, 0.8],
+	[880, 6, 0.4],
+	[G5, 6.5, 0.4],
+	[E5, 7, 0.9]
+];
+const BASS: [number, number][] = [
+	[130.81, 0],
+	[196, 2],
+	[174.61, 4],
+	[196, 6]
+];
+let musicTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Starts or stops the radio's music. Respects mute on every bar. */
+export function radio(on: boolean) {
+	if (on && !musicTimer && typeof AudioContext !== 'undefined') {
+		const bar = () => {
+			if (sound.muted) return;
+			try {
+				for (const [freq, at, dur] of LOOP) tone({ freq, at: at * 0.42, dur: dur * 0.42 + 0.2, type: 'triangle', gain: 0.045 });
+				for (const [freq, at] of BASS) tone({ freq, at: at * 0.42, dur: 0.8, type: 'sine', gain: 0.06 });
+			} catch {
+				// Audio is a nice-to-have.
+			}
+		};
+		bar();
+		musicTimer = setInterval(bar, 8 * 420);
+	} else if (!on && musicTimer) {
+		clearInterval(musicTimer);
+		musicTimer = null;
+	}
+}

@@ -2,6 +2,7 @@
 	import { Badge, Button, Card, Sprite } from '#lib/ui/index.ts';
 	import {
 		BombIcon,
+		CatIcon,
 		HamburgerIcon,
 		PaintBrushIcon,
 		QuestionIcon,
@@ -32,6 +33,14 @@
 			color: 'orange',
 			title: 'Burger for Two',
 			blurb: 'Burgers, sate ayam, mie ayam. One takes the orders, one cooks blind. Talk fast.',
+			ready: true
+		},
+		{
+			href: '/creature',
+			icon: CatIcon,
+			color: 'pink',
+			title: 'Our Little Creature',
+			blurb: 'Raise one little pixel cat together, even when you are apart. It remembers everything.',
 			ready: true
 		},
 	];
