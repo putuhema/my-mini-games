@@ -75,7 +75,7 @@
 		align-items: center;
 		gap: 0.7rem;
 		padding: 0.5rem 0.8rem 0.5rem 0.5rem;
-		border-radius: 999px;
+		border-radius: 0;
 		background: var(--c-light);
 	}
 
@@ -86,7 +86,7 @@
 		display: grid;
 		place-items: center;
 		border: none;
-		border-radius: 50%;
+		border-radius: 0;
 		background: var(--c);
 		color: var(--snow);
 		box-shadow: 0 3px 0 var(--c-shade);
@@ -104,7 +104,7 @@
 	.track {
 		flex: 1;
 		height: 8px;
-		border-radius: 999px;
+		border-radius: 0;
 		background: color-mix(in srgb, var(--c) 25%, transparent);
 		overflow: hidden;
 	}

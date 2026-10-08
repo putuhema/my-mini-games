@@ -157,7 +157,7 @@
 		inset: 0;
 		z-index: 20;
 		border: none;
-		background: rgba(0, 0, 0, 0.35);
+		background: color-mix(in srgb, var(--page) 75%, transparent);
 		animation: fade 0.2s ease;
 	}
 
@@ -213,7 +213,7 @@
 		align-items: center;
 		gap: 0.2rem;
 		padding: 0 0.45rem;
-		border-radius: 999px;
+		border-radius: 0;
 		background: var(--pink-light);
 		color: var(--pink-shade);
 		font-weight: 900;

@@ -1,169 +1,417 @@
 /*
- * Us, Apart design system — inspired by Duolingo.
- * Bright, flat colours; chunky rounded shapes; every pressable thing has a
- * darker "lip" underneath (--depth) that disappears when pressed.
+ * Us, Apart design system — "Night Garden".
+ * Retro pixel CRT: green-black surfaces, firefly glows (mint for player 2,
+ * pink for player 1), VT323 type, hard pixel frames built from stacked
+ * box-shadows, and motion that snaps between frames. No rounded corners.
+ * Two themes: night (default) and day, picked by data-theme on <html>.
  * Live reference: /design
  */
+
+/* VT323 runs small; size-adjust brings it up to the app's rem scale. */
+@font-face {
+  font-family: "Pixel";
+  src: url("/fonts/vt323-latin.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 128%;
+}
+
 :root {
-	/* Brand + feedback colours: base / shade (the 3D lip) / light (tinted surfaces) */
-	--green: #58cc02;
-	--green-shade: #58a700;
-	--green-light: #d7ffb8;
-	--blue: #1cb0f6;
-	--blue-shade: #1899d6;
-	--blue-light: #ddf4ff;
-	--red: #ff4b4b;
-	--red-shade: #ea2b2b;
-	--red-light: #ffdfe0;
-	--gold: #ffc800;
-	--gold-shade: #e7a601;
-	--gold-light: #fff5d3;
-	--orange: #ff9600;
-	--orange-shade: #cd7900;
-	--orange-light: #ffecd1;
-	--purple: #ce82ff;
-	--purple-shade: #a568cc;
-	--purple-light: #f6e8ff;
-	--pink: #ff6fae;
-	--pink-shade: #e0508f;
-	--pink-light: #ffe2ef;
+  /* Surfaces, darkest to lightest */
+  --page: #050b08;
+  --page-glow: #0e2a1c;
+  --soil: #0a1510; /* inset panels */
+  --moss: #0d1d16; /* pressable tiles */
+  --canopy: #11261d; /* cards, dialogs */
+  --well: #050b08; /* sunken: inputs, tracks, meters */
 
-	/* Neutrals, darkest to lightest */
-	--eel: #4b4b4b; /* body text */
-	--wolf: #777777; /* secondary text */
-	--hare: #afafaf; /* disabled text, placeholders */
-	--swan: #e5e5e5; /* borders, tracks */
-	--polar: #f7f7f7; /* subtle surfaces */
-	--snow: #ffffff;
-	/* Neutral as a colour family, for components that take a colour name */
-	--neutral: var(--wolf);
-	--neutral-shade: var(--eel);
-	--neutral-light: var(--polar);
+  /* Pixel frame: gap ring, frame ring, lip */
+  --gap: #050b08;
+  --vine: #1f4434;
+  --root: #0b1c14;
+  --lip-hot: #12402c;
+  --ring-off: #13261d;
+  --hairline: #86a89638;
 
-	/* Shape */
-	--radius-sm: 12px;
-	--radius: 16px;
-	--radius-lg: 24px;
-	--depth: 4px;
-	--border: 2px;
+  /* Ink */
+  --night: #050b08; /* darkest ink: outlines, hard drops */
+  --dew: #eafff2; /* headings, primary text */
+  --sage: #86a896; /* body, secondary text */
+  --bog: #4d6a5a; /* disabled, placeholders */
+  --on-fill: #050b08; /* text on bright fills */
 
-	/* Type */
-	--font: 'Nunito', 'DIN Round', system-ui, sans-serif;
+  /* Glows: text-safe accent / shade (lip, text on tints) / fill (always bright) */
+  --mint: #6bff9e;
+  --mint-shade: #3fd277;
+  --mint-fill: #6bff9e;
+  --pink: #ff6b9a;
+  --pink-shade: #e5487c;
+  --pink-fill: #ff6b9a;
+  --amber: #ffc44d;
+  --amber-shade: #e0a52c;
+  --amber-fill: #ffc44d;
+  --lilac: #c9a2ff;
+  --lilac-shade: #a985f0;
+  --lilac-fill: #c9a2ff;
+  --sky: #86bcff;
+  --sky-shade: #5a9bf0;
+  --sky-fill: #86bcff;
+  --ember: #ff9a4d;
+  --ember-shade: #e57a2a;
+  --ember-fill: #ff9a4d;
+  --berry: #ff5468;
+  --berry-shade: #e23b4f;
+  --berry-fill: #ff5468;
+  --tint-base: var(--canopy);
+  --tint-amt: 16%;
 
-	/* Motion */
-	--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-	--ease-out: cubic-bezier(0.2, 0.8, 0.3, 1);
+  /* Glow strength + effects */
+  --glow-amt: 45%;
+  --glow-mint: color-mix(in srgb, var(--mint) var(--glow-amt), transparent);
+  --glow-pink: color-mix(in srgb, var(--pink) var(--glow-amt), transparent);
+  --glow-amber: color-mix(in srgb, var(--amber) var(--glow-amt), transparent);
+  --hard: #020604d9;
+  --scan: #00000026;
+  --well-shadow: #000000e6;
 
-	/* Players */
-	--p1: var(--pink);
-	--p1-shade: var(--pink-shade);
-	--p1-light: var(--pink-light);
-	--p2: var(--blue);
-	--p2-shade: var(--blue-shade);
-	--p2-light: var(--blue-light);
+  /* Shape */
+  --radius-sm: 0;
+  --radius: 0;
+  --radius-lg: 0;
+  --depth: 4px;
+  --border: 2px;
 
-	color-scheme: light;
-	font-family: var(--font);
-	font-weight: 700;
-	color: var(--eel);
-	background: var(--snow);
-	-webkit-tap-highlight-color: transparent;
+  /* Type */
+  --font: "Pixel", "VT323", ui-monospace, monospace;
+
+  /* Motion */
+  --snap: steps(2, end);
+  --ease-spring: cubic-bezier(0.2, 1.5, 0.4, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /*
+	 * Legacy colour families (base / shade / light), kept so every component
+	 * that takes a colour name keeps working. Each maps onto a glow.
+	 */
+  --green: var(--mint);
+  --green-shade: var(--mint-shade);
+  --green-fill: var(--mint-fill);
+  --blue: var(--sky);
+  --blue-shade: var(--sky-shade);
+  --blue-fill: var(--sky-fill);
+  --red: var(--berry);
+  --red-shade: var(--berry-shade);
+  --red-fill: var(--berry-fill);
+  --gold: var(--amber);
+  --gold-shade: var(--amber-shade);
+  --gold-fill: var(--amber-fill);
+  --orange: var(--ember);
+  --orange-shade: var(--ember-shade);
+  --orange-fill: var(--ember-fill);
+  --purple: var(--lilac);
+  --purple-shade: var(--lilac-shade);
+  --purple-fill: var(--lilac-fill);
+
+  /* Legacy neutrals */
+  --eel: var(--dew);
+  --wolf: var(--sage);
+  --hare: var(--bog);
+  --swan: var(--vine);
+  --polar: var(--moss);
+  --snow: var(--canopy);
+  --neutral: var(--sage);
+  --neutral-shade: var(--dew);
+  --neutral-fill: var(--sage);
+
+  /* Players: pink and mint, the two fireflies */
+  --p1: var(--pink);
+  --p1-shade: var(--pink-shade);
+  --p1-fill: var(--pink-fill);
+  --p2: var(--mint);
+  --p2-shade: var(--mint-shade);
+  --p2-fill: var(--mint-fill);
+
+  color-scheme: dark;
+  font-family: var(--font);
+  font-weight: 400;
+  font-synthesis: none;
+  letter-spacing: 0.02em;
+  color: var(--dew);
+  background: var(--page);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Day: the same garden in morning light. Accents deepen so they read as text,
+   glows fade to a hint, the frame gap turns light and the lip turns green. */
+:root[data-theme="day"] {
+  --page: #e6efd8;
+  --page-glow: #f8fcef;
+  --soil: #dce9cc;
+  --moss: #f4f9ea;
+  --canopy: #fafdf3;
+  --well: #d3e3c2;
+  --gap: #fafdf3;
+  --vine: #8fb37f;
+  --root: #5a8a4c;
+  --lip-hot: #0d7a3c;
+  --ring-off: #c9d9bd;
+  --hairline: #2f553d2e;
+  --night: #1d3a2c;
+  --dew: #10241a;
+  --sage: #4a6a53;
+  --bog: #8aa392;
+  --mint: #0e9a49;
+  --mint-shade: #0a7438;
+  --pink: #d6336c;
+  --pink-shade: #a8204f;
+  --amber: #a86f00;
+  --amber-shade: #7d5200;
+  --lilac: #7a4fd0;
+  --lilac-shade: #5a35a8;
+  --sky: #2a6fd1;
+  --sky-shade: #1d50a0;
+  --ember: #c25a00;
+  --ember-shade: #8f4200;
+  --berry: #d12f3d;
+  --berry-shade: #a01f2b;
+  --tint-base: #ffffff;
+  --tint-amt: 14%;
+  --glow-amt: 18%;
+  --hard: #1d3a2c40;
+  --scan: #2f553d10;
+  --well-shadow: #2f553d55;
+  color-scheme: light;
+}
+
+/* Tinted surfaces for every family, mixed from the theme's accent. */
+:root {
+  --mint-light: color-mix(
+    in srgb,
+    var(--mint) var(--tint-amt),
+    var(--tint-base)
+  );
+  --pink-light: color-mix(
+    in srgb,
+    var(--pink) var(--tint-amt),
+    var(--tint-base)
+  );
+  --amber-light: color-mix(
+    in srgb,
+    var(--amber) var(--tint-amt),
+    var(--tint-base)
+  );
+  --lilac-light: color-mix(
+    in srgb,
+    var(--lilac) var(--tint-amt),
+    var(--tint-base)
+  );
+  --sky-light: color-mix(in srgb, var(--sky) var(--tint-amt), var(--tint-base));
+  --ember-light: color-mix(
+    in srgb,
+    var(--ember) var(--tint-amt),
+    var(--tint-base)
+  );
+  --berry-light: color-mix(
+    in srgb,
+    var(--berry) var(--tint-amt),
+    var(--tint-base)
+  );
+  --green-light: var(--mint-light);
+  --blue-light: var(--sky-light);
+  --red-light: var(--berry-light);
+  --gold-light: var(--amber-light);
+  --orange-light: var(--ember-light);
+  --purple-light: var(--lilac-light);
+  --neutral-light: var(--moss);
+  --p1-light: var(--pink-light);
+  --p2-light: var(--mint-light);
 }
 
 * {
-	box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body {
-	margin: 0;
-	min-height: 100dvh;
-	background: var(--snow);
+  margin: 0;
+  min-height: 100dvh;
+  background:
+    radial-gradient(120% 50% at 50% 0%, var(--page-glow) 0%, transparent 70%)
+      no-repeat,
+    var(--page);
+  background-attachment: fixed;
+}
+
+/* CRT scanlines over everything; purely decorative. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    var(--scan) 0 1px,
+    transparent 1px 3px
+  );
 }
 
 h1,
 h2,
 h3 {
-	font-family: var(--font);
-	font-weight: 900;
-	letter-spacing: -0.01em;
-	margin: 0;
-	color: var(--eel);
+  font-family: var(--font);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1.05;
+  margin: 0;
+  color: var(--dew);
+}
+
+/* VT323 has one weight; emphasis comes from colour or case, set per component. */
+b,
+strong {
+  font-weight: 400;
 }
 
 a {
-	color: inherit;
+  color: inherit;
 }
 
 button,
 input,
-textarea {
-	font: inherit;
-	color: inherit;
+textarea,
+select {
+  font: inherit;
+  font-weight: 400;
+  color: inherit;
+  letter-spacing: inherit;
 }
 
 input,
 textarea {
-	width: 100%;
-	padding: 0.85rem 1rem;
-	border: var(--border) solid var(--swan);
-	border-radius: var(--radius-sm);
-	background: var(--polar);
-	font-size: 16px; /* prevents iOS zoom on focus */
-	font-weight: 700;
-	transition:
-		border-color 0.15s ease,
-		background 0.15s ease;
+  width: 100%;
+  padding: 0.75rem 0.9rem 0.65rem;
+  border: 1px solid var(--hairline);
+  border-radius: 0;
+  background: var(--well);
+  color: var(--dew);
+  font-size: 16px; /* prevents iOS zoom on focus */
+  caret-color: var(--pink);
+  box-shadow: inset 0 2px 0 var(--well-shadow);
+  transition: border-color 0.12s var(--snap);
 }
 
 input::placeholder,
 textarea::placeholder {
-	color: var(--hare);
+  color: var(--bog);
 }
 
 input:focus,
 textarea:focus {
-	outline: none;
-	border-color: var(--blue);
-	background: var(--snow);
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+  border-color: var(--mint);
 }
 
 textarea {
-	resize: vertical;
-	min-height: 7rem;
-	line-height: 1.5;
+  resize: vertical;
+  min-height: 7rem;
+  line-height: 1.35;
 }
 
 :focus-visible {
-	outline: 3px solid var(--blue-light);
-	outline-offset: 2px;
+  outline: 2px solid var(--mint);
+  outline-offset: 3px;
+}
+
+img {
+  image-rendering: pixelated;
+}
+
+code {
+  font-family: var(--font);
+  color: var(--mint);
+}
+
+::selection {
+  background: var(--pink);
+  color: var(--on-fill);
 }
 
 .muted {
-	color: var(--wolf);
+  color: var(--sage);
 }
 
 .error {
-	color: var(--red-shade);
-	font-weight: 800;
-	font-size: 0.9rem;
-	margin: 0;
+  color: var(--berry);
+  font-size: 0.95rem;
+  margin: 0;
 }
 
 .label {
-	display: block;
-	font-size: 0.8rem;
-	font-weight: 900;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	color: var(--wolf);
-	margin-bottom: 0.4rem;
+  display: block;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--mint);
+  margin-bottom: 0.45rem;
+}
+
+/*
+ * The pixel frame: the system's signature raised surface. A gap ring, a frame
+ * ring, and a lip below. Hover lights the ring mint; press drops into the lip.
+ */
+.px-frame {
+  --frame: var(--vine);
+  background: var(--moss);
+  box-shadow:
+    0 0 0 2px var(--gap),
+    0 0 0 4px var(--frame),
+    0 var(--depth) 0 4px var(--root);
+  transition: transform 0.1s var(--snap);
+}
+
+/* Hard stepped corners, for dialogs and big panels. */
+.px-corners {
+  clip-path: polygon(
+    0 10px,
+    5px 10px,
+    5px 5px,
+    10px 5px,
+    10px 0,
+    calc(100% - 10px) 0,
+    calc(100% - 10px) 5px,
+    calc(100% - 5px) 5px,
+    calc(100% - 5px) 10px,
+    100% 10px,
+    100% calc(100% - 10px),
+    calc(100% - 5px) calc(100% - 10px),
+    calc(100% - 5px) calc(100% - 5px),
+    calc(100% - 10px) calc(100% - 5px),
+    calc(100% - 10px) 100%,
+    10px 100%,
+    10px calc(100% - 5px),
+    5px calc(100% - 5px),
+    5px calc(100% - 10px),
+    0 calc(100% - 10px)
+  );
+}
+
+.blink {
+  animation: px-blink 2.2s steps(2, end) infinite;
+}
+
+@keyframes px-blink {
+  50% {
+    opacity: 0.25;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		transition-duration: 0.01ms !important;
-	}
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

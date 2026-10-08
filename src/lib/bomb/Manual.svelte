@@ -242,8 +242,8 @@
 
 	code {
 		padding: 0.05rem 0.35rem;
-		border-radius: 6px;
-		background: #1e2124;
+		border-radius: 0;
+		background: #0f1813;
 		color: var(--snow);
 		font-size: 0.85em;
 	}
@@ -287,13 +287,13 @@
 
 	.strip-row strong {
 		font-size: 1.4rem;
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+		font-family: var(--font);
 	}
 
 	.swatch {
 		width: 1.1rem;
 		height: 1.6rem;
-		border-radius: 999px;
+		border-radius: 0;
 		background: var(--s);
 		box-shadow: inset 0 0 0 2px rgb(0 0 0 / 0.2);
 	}
@@ -354,7 +354,7 @@
 		display: inline-block;
 		min-width: 4.2rem;
 		padding: 0.2rem 0.4rem;
-		border-radius: 8px;
+		border-radius: 0;
 		background: color-mix(in srgb, var(--s) 22%, white);
 		border: 2px solid var(--s);
 		color: var(--eel);

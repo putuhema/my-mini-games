@@ -3,10 +3,9 @@
 	import { useMutation } from 'convex-svelte';
 	import { api } from '../../../convex/_generated/api';
 	import { errorMessage, me, saveName } from '#lib/player.svelte.ts';
-	import { Button, Card, ChoiceTile } from '#lib/ui/index.ts';
+	import { Button, Card, ChoiceTile, Sprite } from '#lib/ui/index.ts';
 	import { LightningIcon, MountainsIcon, XIcon } from '#lib/icons/index.ts';
 	import type { BoardSize } from '../../../convex/board';
-	import SnakeMascot from '#lib/icons/SnakeMascot.svelte';
 
 	const createRoom = useMutation(api.rooms.create);
 	const joinRoom = useMutation(api.rooms.join);
@@ -41,7 +40,7 @@
 	<a class="close" href="/" aria-label="Back to all games"><XIcon weight="bold" size="1.5rem" /></a>
 
 	<div class="intro">
-		<span class="mascot"><SnakeMascot size={88} /></span>
+		<span class="mascot"><Sprite name="snake" scale={7} /></span>
 		<div class="speech">
 			<h1>Snakes &amp; Ladders</h1>
 			<p>

@@ -80,8 +80,8 @@
 		translate: -50% 0;
 		width: 1.4rem;
 		height: 0.35rem;
-		border-radius: 999px;
-		background: #2a2d30;
+		border-radius: 0;
+		background: #16231c;
 	}
 
 	.done .led {

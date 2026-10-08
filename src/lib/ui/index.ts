@@ -5,3 +5,5 @@ export { default as ChoiceTile } from './ChoiceTile.svelte';
 export { default as ProgressBar } from './ProgressBar.svelte';
 export { default as Stat } from './Stat.svelte';
 export { default as Toast } from './Toast.svelte';
+export { default as ThemeToggle } from './ThemeToggle.svelte';
+export { default as Sprite } from './Sprite.svelte';

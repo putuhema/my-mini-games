@@ -258,7 +258,7 @@
 		width: 3rem;
 		height: 3rem;
 		flex-shrink: 0;
-		border-radius: 50%;
+		border-radius: 0;
 		background: var(--red);
 		color: var(--snow);
 		box-shadow: 0 0 0 0 color-mix(in srgb, var(--red) 50%, transparent);
@@ -281,7 +281,7 @@
 
 	.meter span {
 		flex: 1;
-		border-radius: 999px;
+		border-radius: 0;
 		background: var(--red);
 		transition: height 0.08s linear;
 	}
@@ -302,7 +302,7 @@
 		width: 2.6rem;
 		height: 2.6rem;
 		flex-shrink: 0;
-		border-radius: 50%;
+		border-radius: 0;
 		background: var(--polar);
 		color: var(--wolf);
 	}

@@ -462,9 +462,9 @@
 	.token::before {
 		content: '';
 		position: absolute;
-		inset: 70% 10% -12%;
-		border-radius: 50%;
-		background: radial-gradient(rgba(0, 0, 0, 0.3), transparent 70%);
+		inset: 82% 14% -8%;
+		border-radius: 0;
+		background: var(--hard);
 	}
 
 	.disc {
@@ -472,13 +472,15 @@
 		inset: 0;
 		display: grid;
 		place-items: center;
-		border-radius: 50%;
+		border-radius: 0;
 		background: var(--c);
 		color: var(--snow);
 		font-weight: 900;
 		font-size: calc(100cqw / var(--cols) * 0.3);
-		border: 2px solid var(--snow);
-		box-shadow: 0 3px 0 var(--c-shade);
+		border: 2px solid var(--night);
+		box-shadow:
+			inset 0 3px 0 color-mix(in srgb, var(--c) 50%, #fff),
+			inset 0 -3px 0 var(--c-shade);
 		transform-origin: 50% 100%;
 		transform: translateY(calc(var(--lift) * -1)) scale(var(--sx), var(--sy));
 	}

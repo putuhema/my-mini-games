@@ -23,37 +23,42 @@
 	aria-valuemin={0}
 	aria-valuemax={max}
 	aria-valuenow={value}
-	style="--fill: var(--{color})"
+	style="--fill: var(--{color}-fill, var(--{color}))"
 >
 	<div class="fill" style="width: {pct}%"></div>
 </div>
 
 <style>
+	/* A sunken well with a segmented, bevelled fill that moves in steps. */
 	.track {
-		height: 16px;
-		border-radius: 999px;
-		background: var(--swan);
-		overflow: hidden;
+		height: 18px;
+		padding: 3px;
+		background: var(--well);
+		box-shadow:
+			inset 0 2px 0 var(--well-shadow),
+			0 0 0 2px var(--gap),
+			0 0 0 3px var(--vine);
 	}
 
 	.fill {
 		position: relative;
 		height: 100%;
-		min-width: 16px;
-		border-radius: inherit;
-		background: var(--fill);
-		transition: width 0.6s var(--ease-spring);
+		min-width: 9px;
+		background: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--fill) 50%, #fff) 0 3px,
+			var(--fill) 3px calc(100% - 3px),
+			color-mix(in srgb, var(--fill) 62%, #000) calc(100% - 3px) 100%
+		);
+		box-shadow: 0 0 8px color-mix(in srgb, var(--fill) var(--glow-amt), transparent);
+		transition: width 0.5s steps(5, end);
 	}
 
-	/* The glossy highlight strip Duolingo bars have. */
+	/* Cut the fill into blocks. */
 	.fill::after {
 		content: '';
 		position: absolute;
-		top: 4px;
-		left: 8px;
-		right: 8px;
-		height: 4px;
-		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.35);
+		inset: 0;
+		background: repeating-linear-gradient(90deg, transparent 0 9px, var(--well) 9px 12px);
 	}
 </style>

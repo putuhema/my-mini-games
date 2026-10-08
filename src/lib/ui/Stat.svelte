@@ -25,14 +25,16 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
-		padding: 0.35rem 0.6rem;
-		border-radius: var(--radius-sm);
-		font-weight: 900;
-		font-size: 1rem;
+		padding: 0.3rem 0.5rem;
+		font-size: 1.35rem;
+		line-height: 1;
 		color: var(--c);
+		text-shadow: 0 0 10px color-mix(in srgb, var(--c) var(--glow-amt), transparent);
+		font-variant-numeric: tabular-nums;
 	}
 
 	.icon {
 		display: inline-flex;
+		filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) var(--glow-amt), transparent));
 	}
 </style>

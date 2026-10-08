@@ -1238,7 +1238,7 @@
 		flex-shrink: 0;
 		display: grid;
 		place-items: center;
-		border-radius: 50%;
+		border-radius: 0;
 		background: var(--c);
 		box-shadow: 0 3px 0 var(--c-shade);
 		color: var(--snow);
@@ -1327,7 +1327,7 @@
 	.bubble.collapsed {
 		padding: 0;
 		width: auto;
-		border-radius: 999px;
+		border-radius: 0;
 	}
 
 	@keyframes pop {
@@ -1361,7 +1361,7 @@
 		place-items: center;
 		border: none;
 		background: var(--polar);
-		border-radius: 999px;
+		border-radius: 0;
 		width: 1.9rem;
 		height: 1.9rem;
 		cursor: pointer;
@@ -1468,7 +1468,7 @@
 		align-items: center;
 		gap: 0.3rem;
 		padding: 0.3rem 0.65rem;
-		border-radius: 999px;
+		border-radius: 0;
 		background: var(--polar);
 		color: var(--wolf);
 		font-size: 0.8rem;
@@ -1614,7 +1614,7 @@
 		inset: 0;
 		z-index: 20;
 		border: none;
-		background: rgba(0, 0, 0, 0.35);
+		background: color-mix(in srgb, var(--page) 75%, transparent);
 		animation: fade 0.2s ease;
 	}
 

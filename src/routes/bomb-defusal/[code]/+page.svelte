@@ -537,7 +537,7 @@
 		height: 2.8rem;
 		border: var(--border) solid var(--swan);
 		border-bottom-width: calc(var(--border) + var(--depth));
-		border-radius: 50%;
+		border-radius: 0;
 		background: var(--snow);
 		color: var(--blue);
 		cursor: pointer;
@@ -601,7 +601,7 @@
 	.hint.live {
 		padding: 0.7rem 1rem;
 		border-radius: var(--radius);
-		background: #3b4248;
+		background: #22332b;
 		color: var(--snow);
 	}
 
@@ -609,7 +609,7 @@
 		width: 0.7rem;
 		height: 0.7rem;
 		flex-shrink: 0;
-		border-radius: 50%;
+		border-radius: 0;
 		background: var(--red);
 		animation: pulse 1s ease-in-out infinite;
 	}
@@ -751,7 +751,7 @@
 	}
 
 	.h-time {
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+		font-family: var(--font);
 		font-weight: 800;
 	}
 

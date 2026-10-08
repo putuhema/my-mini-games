@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Dice3D from '#lib/snakes/Dice3D.svelte';
-	import { Badge, Button, Card, ChoiceTile, ProgressBar, Stat, Toast } from '#lib/ui/index.ts';
+	import { Badge, Button, Card, ChoiceTile, ProgressBar, Stat, ThemeToggle, Toast } from '#lib/ui/index.ts';
 	import {
 		CATEGORY_ICON,
 		ChatCircleDotsIcon,
@@ -31,22 +31,23 @@
 	];
 
 	const families = [
-		{ name: 'green', role: 'Primary · go, success, snakes' },
-		{ name: 'blue', role: 'Secondary · links, focus, player 2' },
-		{ name: 'pink', role: 'Player 1 · love' },
-		{ name: 'red', role: 'Danger · errors, setbacks' },
-		{ name: 'gold', role: 'Rewards · XP, ladders, finish' },
-		{ name: 'orange', role: 'Streaks · fun questions' },
-		{ name: 'purple', role: 'Deep talk' }
+		{ name: 'mint', role: 'Primary · go, success, player 2' },
+		{ name: 'pink', role: 'Brand · love, player 1' },
+		{ name: 'sky', role: 'Secondary · links, memories' },
+		{ name: 'berry', role: 'Danger · errors, snakes' },
+		{ name: 'amber', role: 'Rewards · XP, ladders, finish' },
+		{ name: 'ember', role: 'Streaks · fun questions' },
+		{ name: 'lilac', role: 'Deep talk, secrets' }
 	];
 
 	const neutrals = [
-		{ name: 'eel', role: 'Body text' },
-		{ name: 'wolf', role: 'Secondary text' },
-		{ name: 'hare', role: 'Disabled, placeholder' },
-		{ name: 'swan', role: 'Borders, tracks' },
-		{ name: 'polar', role: 'Subtle surfaces' },
-		{ name: 'snow', role: 'Background' }
+		{ name: 'dew', role: 'Headings, primary text' },
+		{ name: 'sage', role: 'Body, secondary text' },
+		{ name: 'bog', role: 'Disabled, placeholder' },
+		{ name: 'vine', role: 'Frame rings, tracks' },
+		{ name: 'moss', role: 'Tiles, subtle surfaces' },
+		{ name: 'canopy', role: 'Cards' },
+		{ name: 'page', role: 'Background' }
 	];
 
 	const variants = ['primary', 'secondary', 'super', 'gold', 'danger', 'outline', 'ghost'] as const;
@@ -68,16 +69,20 @@
 
 <header class="topbar">
 	<a href="/" class="logo">us, apart</a>
-	<Badge color="neutral">Design system</Badge>
+	<nav class="nav">
+		<a href="/design/pixel" class="spec-link">Full spec ↗</a>
+		<ThemeToggle />
+	</nav>
 </header>
 
 <main>
 	<section class="intro">
 		<h1>Design system</h1>
 		<p class="muted">
-			Inspired by Duolingo: bright flat colour, chunky rounded shapes, and a 3D “lip” under
-			everything you can press. Tokens live in <code>src/app.css</code>, components in
-			<code>src/lib/ui</code>.
+			<b>Night Garden</b>: a retro pixel CRT look with green-black surfaces, firefly glows (pink and
+			mint for the two of you), hard pixel frames and stepped motion. Every component on this page is
+			the real one. Tokens live in <code>src/app.css</code>, components in <code>src/lib/ui</code>, and
+			the full spec is at <a href="/design/pixel">/design/pixel</a>.
 		</p>
 	</section>
 
@@ -85,8 +90,9 @@
 	<section>
 		<h2>Colour</h2>
 		<p class="muted lede">
-			Every colour comes as a family of three: <b>base</b> for fills, <b>shade</b> for the 3D lip and
-			text on light tints, <b>light</b> for tinted surfaces.
+			Every glow comes as a family: <b>base</b> for text and fills, <b>shade</b> for the lip and
+			text on tints, <b>light</b> for tinted surfaces. The older names (green, blue, red, gold, orange,
+			purple) still work as aliases.
 		</p>
 		<div class="families">
 			{#each families as f (f.name)}
@@ -120,15 +126,15 @@
 	<!-- Type -->
 	<section>
 		<h2>Typography</h2>
-		<p class="muted lede">Nunito throughout: rounded, friendly, and heavy. Weight does the work, not size.</p>
+		<p class="muted lede">VT323 throughout, a CRT terminal face with a single weight. Size, case and colour do the work.</p>
 		<Card>
 			<div class="type-scale">
-				<div><span class="spec">Display · 900 · 40</span><p class="t-display">Stay close, play together</p></div>
-				<div><span class="spec">Heading · 900 · 24</span><p class="t-h2">Your turn to roll</p></div>
-				<div><span class="spec">Question · 900 · 20</span><p class="t-q">What song reminds you of me, and why?</p></div>
-				<div><span class="spec">Body · 700 · 16</span><p>Answer honestly — your partner reacts before the turn passes.</p></div>
-				<div><span class="spec">Label · 900 · 13 · caps</span><p class="label">Your name</p></div>
-				<div><span class="spec">Button · 800 · 15 · caps</span><p class="t-button">Send answer</p></div>
+				<div><span class="spec">Display · 40</span><p class="t-display">Stay close, play together</p></div>
+				<div><span class="spec">Heading · 24</span><p class="t-h2">Your turn to roll</p></div>
+				<div><span class="spec">Question · 20</span><p class="t-q">What song reminds you of me, and why?</p></div>
+				<div><span class="spec">Body · 16</span><p>Answer honestly — your partner reacts before the turn passes.</p></div>
+				<div><span class="spec">Label · 13 · caps</span><p class="label">Your name</p></div>
+				<div><span class="spec">Button · 15 · caps</span><p class="t-button">Send answer</p></div>
 			</div>
 		</Card>
 	</section>
@@ -137,17 +143,17 @@
 	<section>
 		<h2>Shape &amp; depth</h2>
 		<div class="shapes">
-			<Card><strong>radius-sm · 12</strong><p class="muted">Inputs, small buttons</p></Card>
-			<Card><strong>radius · 16</strong><p class="muted">Buttons, tiles, board</p></Card>
-			<Card><strong>radius-lg · 24</strong><p class="muted">Cards, bubbles</p></Card>
-			<Card><strong>depth · 4</strong><p class="muted">The lip under anything pressable. Pressing removes it.</p></Card>
+			<Card><strong>radius · 0</strong><p class="muted">No rounded corners anywhere. Edges are pixels.</p></Card>
+			<Card><strong>gap · 2</strong><p class="muted">The inner ring that separates a surface from its frame.</p></Card>
+			<Card><strong>frame · 4</strong><p class="muted">The ring itself. It lights up mint on hover.</p></Card>
+			<Card><strong>depth · 4</strong><p class="muted">The lip under anything pressable. Pressing drops into it.</p></Card>
 		</div>
 	</section>
 
 	<!-- Buttons -->
 	<section>
 		<h2>Buttons</h2>
-		<p class="muted lede">Uppercase, bold, with a darker lip. Press to see them sink.</p>
+		<p class="muted lede">Bevelled fills with dark text, plus a quiet framed outline. Press to see them drop.</p>
 		<div class="row wrap">
 			{#each variants as v (v)}
 				<Button variant={v}>{v}</Button>
@@ -166,7 +172,7 @@
 		<h2>Cards</h2>
 		<div class="shapes">
 			<Card><strong>Default</strong><p class="muted">Content containers.</p></Card>
-			<Card interactive><strong>Interactive</strong><p class="muted">Press me — the lip collapses.</p></Card>
+			<Card interactive><strong>Interactive</strong><p class="muted">Hover lights the frame; press drops it.</p></Card>
 			<Card tone="green"><strong>Tinted · green</strong><p class="muted">Good news, highlights.</p></Card>
 			<Card tone="gold"><strong>Tinted · gold</strong><p class="muted">Rewards and stats.</p></Card>
 		</div>
@@ -353,15 +359,34 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		border-bottom: var(--border) solid var(--swan);
+		border-bottom: 2px dashed color-mix(in srgb, var(--sage) 36%, transparent);
 	}
 
 	.logo {
-		font-size: 1.8rem;
-		font-weight: 900;
-		color: var(--green);
+		font-size: 2.2rem;
+		color: var(--dew);
 		text-decoration: none;
-		letter-spacing: -0.03em;
+		letter-spacing: 0.04em;
+		text-shadow:
+			-2px 2px var(--pink),
+			2px -2px var(--mint);
+	}
+
+	.nav {
+		display: flex;
+		align-items: center;
+		gap: 1.25rem;
+	}
+
+	.spec-link {
+		color: var(--sage);
+		text-decoration: none;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+	}
+
+	.spec-link:hover {
+		color: var(--mint);
 	}
 
 	main {
@@ -397,7 +422,7 @@
 
 	code {
 		padding: 0.1rem 0.4rem;
-		border-radius: 6px;
+		border-radius: 0;
 		background: var(--polar);
 		font-size: 0.9em;
 	}
@@ -433,7 +458,7 @@
 
 	.chips span {
 		padding: 0.35rem;
-		border-radius: 8px;
+		border-radius: 0;
 		color: var(--snow);
 		font-size: 0.7rem;
 		font-weight: 900;

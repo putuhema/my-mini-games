@@ -10,49 +10,57 @@
 	let { selected = false, children, class: className = '', ...rest }: Props = $props();
 </script>
 
-<!-- A pressable answer option, like Duolingo's multiple-choice tiles. -->
+<!-- A pressable answer option: a pixel-framed tile that lights up when picked. -->
 <button type="button" {...rest} class="tile {className}" class:selected aria-pressed={selected}>
 	{@render children()}
 </button>
 
 <style>
 	.tile {
+		--frame: var(--vine);
 		display: grid;
 		place-items: center;
 		padding: 0.6rem;
-		border: var(--border) solid var(--swan);
-		border-bottom-width: calc(var(--border) + var(--depth));
-		border-radius: var(--radius);
-		background: var(--snow);
-		font-weight: 800;
+		border: none;
+		background: var(--moss);
+		color: var(--sage);
+		box-shadow:
+			0 0 0 2px var(--gap),
+			0 0 0 4px var(--frame),
+			0 var(--depth) 0 4px var(--root);
 		cursor: pointer;
 		touch-action: manipulation;
-		transition:
-			transform 0.08s ease,
-			border-bottom-width 0.08s ease,
-			background 0.15s ease;
+		transition: transform 0.1s var(--snap);
 	}
 
 	@media (hover: hover) {
 		.tile:hover:not(:disabled) {
-			background: var(--polar);
+			--frame: var(--mint);
+			color: var(--dew);
 		}
 	}
 
 	.tile:active:not(:disabled) {
-		transform: translateY(var(--depth));
-		border-bottom-width: var(--border);
+		transform: translateY(3px);
+		box-shadow:
+			0 0 0 2px var(--gap),
+			0 0 0 4px var(--frame),
+			0 1px 0 4px var(--root);
 	}
 
 	.selected {
-		border-color: var(--blue);
-		border-bottom-color: var(--blue-shade);
-		background: var(--blue-light);
-		color: var(--blue-shade);
+		--frame: var(--mint);
+		background: var(--mint-light);
+		color: var(--mint);
+		box-shadow:
+			0 0 0 2px var(--gap),
+			0 0 0 4px var(--frame),
+			0 var(--depth) 0 4px var(--lip-hot),
+			0 0 14px var(--glow-mint);
 	}
 
 	.tile:disabled {
-		opacity: 0.5;
+		opacity: 0.4;
 		cursor: not-allowed;
 	}
 </style>

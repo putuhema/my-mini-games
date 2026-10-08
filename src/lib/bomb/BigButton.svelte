@@ -85,12 +85,12 @@
 		width: 7.5rem;
 		aspect-ratio: 1;
 		border: none;
-		border-radius: 50%;
+		border-radius: 0;
 		background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--bg) 70%, white), var(--bg) 60%);
 		color: var(--fg);
 		box-shadow:
 			0 7px 0 var(--shade),
-			0 0 0 6px #4a5157;
+			0 0 0 6px #3a5045;
 		font-family: var(--font);
 		font-weight: 900;
 		font-size: 0.95rem;
@@ -109,7 +109,7 @@
 		transform: translateY(7px);
 		box-shadow:
 			0 0 0 var(--shade),
-			0 0 0 6px #4a5157;
+			0 0 0 6px #3a5045;
 	}
 
 	.blue {
@@ -137,9 +137,9 @@
 	.strip {
 		width: 1.1rem;
 		height: 7.5rem;
-		border-radius: 999px;
-		background: #1e2124;
-		box-shadow: inset 0 0 0 3px #4a5157;
+		border-radius: 0;
+		background: #0f1813;
+		box-shadow: inset 0 0 0 3px #3a5045;
 		transition:
 			background 0.15s ease,
 			box-shadow 0.15s ease;
@@ -148,7 +148,7 @@
 	.strip.lit {
 		background: var(--s);
 		box-shadow:
-			inset 0 0 0 3px #4a5157,
+			inset 0 0 0 3px #3a5045,
 			0 0 18px var(--s);
 	}
 

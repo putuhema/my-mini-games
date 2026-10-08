@@ -39,7 +39,7 @@
 <style>
 	.toast {
 		position: fixed;
-		top: calc(0.75rem + env(safe-area-inset-top));
+		top: calc(0.9rem + env(safe-area-inset-top));
 		left: 50%;
 		z-index: 30;
 		translate: -50% 0;
@@ -47,44 +47,46 @@
 		max-width: calc(100vw - 1.5rem);
 		display: flex;
 		align-items: center;
-		gap: 0.65rem;
+		gap: 0.75rem;
 		padding: 0.5rem 1rem 0.5rem 0.5rem;
-		border: var(--border) solid var(--c);
-		border-bottom-width: calc(var(--border) + var(--depth));
-		border-bottom-color: var(--c-shade);
-		border-radius: 999px;
-		background: var(--c-light);
-		color: var(--c-shade);
-		animation: drop 0.4s var(--ease-spring);
+		background: var(--canopy);
+		color: var(--c);
+		box-shadow:
+			0 0 0 2px var(--gap),
+			0 0 0 4px var(--c),
+			0 0 22px color-mix(in srgb, var(--c) var(--glow-amt), transparent),
+			8px 8px 0 4px var(--hard);
+		animation: drop 0.45s var(--ease-spring);
 	}
 
 	.icon {
-		width: 2.3rem;
-		height: 2.3rem;
+		width: 2.4rem;
+		height: 2.4rem;
 		flex-shrink: 0;
 		display: grid;
 		place-items: center;
-		border-radius: 50%;
-		background: var(--snow);
-		animation: pop 0.45s 0.12s var(--ease-spring) backwards;
+		background: var(--c-light);
+		box-shadow: 0 0 0 2px var(--c);
+		animation: pop 0.3s 0.12s steps(3, end) backwards;
 	}
 
 	.text {
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
-		line-height: 1.25;
+		line-height: 1.15;
 	}
 
 	strong {
-		font-size: 0.95rem;
-		font-weight: 900;
+		color: var(--c);
+		font-size: 1.15rem;
+		letter-spacing: 0.06em;
+		text-shadow: 0 0 10px color-mix(in srgb, var(--c) var(--glow-amt), transparent);
 	}
 
 	.body {
-		font-size: 0.82rem;
-		font-weight: 800;
-		opacity: 0.9;
+		color: var(--sage);
+		font-size: 1rem;
 	}
 
 	@keyframes drop {

@@ -158,10 +158,12 @@
 	.casing {
 		padding: 0.9rem;
 		border-radius: var(--radius-lg);
-		background: #3b4248;
+		background: #22332b;
 		box-shadow:
-			inset 0 0 0 3px #4d555c,
-			0 8px 0 #2a2f34;
+			inset 0 0 0 3px #34493e,
+			0 0 0 2px var(--gap),
+			0 0 0 4px var(--vine),
+			0 8px 0 4px #121c17;
 	}
 
 	.shake {
@@ -197,18 +199,17 @@
 		gap: 0.7rem;
 		padding: 0.35rem 0.9rem;
 		border-radius: var(--radius-sm);
-		background: #111416;
-		box-shadow: inset 0 0 0 3px #22272b;
+		background: #050806;
+		box-shadow: inset 0 0 0 3px #1a2620;
 	}
 
 	.digits {
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-		font-size: 2.4rem;
-		font-weight: 800;
+		font-family: var(--font);
+		font-size: 2.6rem;
 		line-height: 1;
 		letter-spacing: 0.04em;
 		color: var(--red);
-		text-shadow: 0 0 12px rgb(255 75 75 / 0.6);
+		text-shadow: 0 0 12px color-mix(in srgb, var(--red) 60%, transparent);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -232,9 +233,9 @@
 		height: 1.45rem;
 		display: grid;
 		place-items: center;
-		border-radius: 6px;
-		background: #22272b;
-		color: #3a4146;
+		border-radius: 0;
+		background: #1a2620;
+		color: #3a5045;
 	}
 
 	.strike.on {
@@ -277,7 +278,7 @@
 	}
 
 	.serial strong {
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+		font-family: var(--font);
 		letter-spacing: 0.12em;
 		font-size: 1.1rem;
 	}
@@ -292,7 +293,7 @@
 	.battery {
 		width: 0.7rem;
 		height: 1.2rem;
-		border-radius: 3px;
+		border-radius: 0;
 		background: linear-gradient(var(--gold) 0 22%, #3a3326 22% 100%);
 		position: relative;
 	}
@@ -301,7 +302,7 @@
 		flex-direction: row;
 		align-items: center;
 		gap: 0.45rem;
-		background: #1e2124;
+		background: #0f1813;
 		color: var(--snow);
 		box-shadow: inset 0 -3px 0 #000;
 	}
@@ -309,8 +310,8 @@
 	.lamp {
 		width: 0.75rem;
 		height: 0.75rem;
-		border-radius: 50%;
-		background: #4a5157;
+		border-radius: 0;
+		background: #3a5045;
 	}
 
 	.lamp.lit {
@@ -331,10 +332,10 @@
 		min-height: 13rem;
 		padding: 1.3rem 1rem 1rem;
 		border-radius: var(--radius);
-		background: #59626a;
+		background: #3a5045;
 		box-shadow:
-			inset 0 0 0 3px #6a737b,
-			inset 0 -5px 0 #4a5157;
+			inset 0 0 0 3px #4b6457,
+			inset 0 -5px 0 #3a5045;
 	}
 
 	.module.flash {
@@ -355,8 +356,8 @@
 		height: 1.1rem;
 		display: grid;
 		place-items: center;
-		border-radius: 50%;
-		background: #2a2f34;
+		border-radius: 0;
+		background: #121c17;
 		color: var(--snow);
 	}
 
@@ -366,6 +367,6 @@
 	}
 
 	.solved {
-		background: #4f5d52;
+		background: #2f5a43;
 	}
 </style>

@@ -3,8 +3,8 @@
 	import { useMutation } from 'convex-svelte';
 	import { api } from '../../../convex/_generated/api';
 	import { errorMessage, me, saveName } from '#lib/player.svelte.ts';
-	import { Button, Card } from '#lib/ui/index.ts';
-	import { BombIcon, XIcon } from '#lib/icons/index.ts';
+	import { Button, Card, Sprite } from '#lib/ui/index.ts';
+	import { XIcon } from '#lib/icons/index.ts';
 
 	const createRoom = useMutation(api.defuse.create);
 	const joinRoom = useMutation(api.defuse.join);
@@ -33,7 +33,7 @@
 	<a class="close" href="/" aria-label="Back to all games"><XIcon weight="bold" size="1.5rem" /></a>
 
 	<div class="intro">
-		<span class="mascot"><BombIcon weight="fill" size="5.5rem" /></span>
+		<span class="mascot"><Sprite name="bomb" scale={11} /></span>
 		<div class="speech">
 			<h1>Bomb Defusal</h1>
 			<p>
@@ -109,7 +109,6 @@
 	.mascot {
 		display: flex;
 		flex-shrink: 0;
-		color: #3b4248;
 		animation: wobble 1.6s ease-in-out infinite;
 	}
 
