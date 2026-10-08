@@ -8,6 +8,7 @@
 	import { COLUMNS, DEFAULT_LAYOUT, type Layout } from '../../../convex/board';
 	import { FlagCheckeredIcon, HeartIcon, TargetIcon } from '../icons/index.ts';
 	import { sfx } from '../sound.svelte.ts';
+	import { boardArt, TILE } from './art.ts';
 
 	type Token = { id: string; name: string; position: number };
 	let {
@@ -58,17 +59,7 @@
 	const ladders = $derived(Object.entries(layout.ladders).map(([from, to]) => {
 		const a = center(Number(from));
 		const b = center(to);
-		const len = Math.hypot(b.x - a.x, b.y - a.y);
-		const nx = (-(b.y - a.y) / len) * 0.16;
-		const ny = ((b.x - a.x) / len) * 0.16;
-		const rungCount = Math.max(2, Math.round(len / 0.32));
-		const rungs = Array.from({ length: rungCount }, (_, i) => {
-			const t = (i + 0.5) / rungCount;
-			const x = a.x + (b.x - a.x) * t;
-			const y = a.y + (b.y - a.y) * t;
-			return { x1: x - nx, y1: y - ny, x2: x + nx, y2: y + ny };
-		});
-		return { a, b, nx, ny, rungs, key: from };
+		return [a, b] as [Point, Point];
 	}));
 
 	const snakes = $derived(Object.entries(layout.snakes).map(([from, to]) => {
@@ -83,10 +74,13 @@
 		const py = (dx / len) * wiggle;
 		const c1 = { x: h.x + dx * 0.33 + px, y: h.y + dy * 0.33 + py };
 		const c2 = { x: h.x + dx * 0.66 - px, y: h.y + dy * 0.66 - py };
-		const d = `M ${h.x} ${h.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${t.x} ${t.y}`;
-		return { d, h, t, c1, c2, key: from };
+		return { h, t, c1, c2, key: from };
 	}));
 	const snakeByHead = $derived(new Map(snakes.map((s) => [Number(s.key), s])));
+
+	const art = $derived(boardArt(columns, rows, ladders, snakes.map((s) => [s.h, s.c1, s.c2, s.t])));
+	const artW = $derived(columns * TILE);
+	const artH = $derived(rows * TILE);
 
 	// ---- Token movement ----
 
@@ -271,28 +265,13 @@
 		{/each}
 	</div>
 
-	<svg viewBox="0 0 {columns} {rows}" aria-hidden="true">
-		{#each ladders as l (l.key)}
-			<g class="ladder-art">
-				<line x1={l.a.x - l.nx} y1={l.a.y - l.ny} x2={l.b.x - l.nx} y2={l.b.y - l.ny} />
-				<line x1={l.a.x + l.nx} y1={l.a.y + l.ny} x2={l.b.x + l.nx} y2={l.b.y + l.ny} />
-				{#each l.rungs as r, i (i)}
-					<line class="rung" {...r} />
-				{/each}
-			</g>
-		{/each}
-		{#each snakes as s (s.key)}
-			<g class="snake-art">
-				<path class="body" d={s.d} />
-				<path class="scales" d={s.d} />
-				<circle class="head" cx={s.h.x} cy={s.h.y} r="0.19" />
-				<circle class="eye" cx={s.h.x - 0.075} cy={s.h.y - 0.04} r="0.065" />
-				<circle class="eye" cx={s.h.x + 0.075} cy={s.h.y - 0.04} r="0.065" />
-				<circle class="pupil" cx={s.h.x - 0.06} cy={s.h.y - 0.03} r="0.032" />
-				<circle class="pupil" cx={s.h.x + 0.09} cy={s.h.y - 0.03} r="0.032" />
-			</g>
-		{/each}
-	</svg>
+	<img
+		class="art"
+		src={art.url}
+		alt=""
+		draggable="false"
+		style="left: {(-art.off / artW) * 100}%; top: {(-art.off / artH) * 100}%; width: {(art.w / artW) * 100}%; height: {(art.h / artH) * 100}%"
+	/>
 
 	{#each players as player, i (player.id)}
 		{#if rendered[player.id]}
@@ -400,50 +379,11 @@
 		}
 	}
 
-	svg {
+	.art {
 		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
+		max-width: none;
+		image-rendering: pixelated;
 		pointer-events: none;
-	}
-
-	.ladder-art line {
-		stroke: var(--orange);
-		stroke-width: 0.08;
-		stroke-linecap: round;
-	}
-
-	.ladder-art .rung {
-		stroke: var(--gold);
-		stroke-width: 0.06;
-	}
-
-	.snake-art .body {
-		fill: none;
-		stroke: var(--green);
-		stroke-width: 0.22;
-		stroke-linecap: round;
-	}
-
-	.snake-art .scales {
-		fill: none;
-		stroke: #89e219;
-		stroke-width: 0.07;
-		stroke-dasharray: 0.05 0.15;
-		stroke-linecap: round;
-	}
-
-	.snake-art .head {
-		fill: var(--green-shade);
-	}
-
-	.snake-art .eye {
-		fill: var(--snow);
-	}
-
-	.snake-art .pupil {
-		fill: var(--eel);
 	}
 
 	.token {
