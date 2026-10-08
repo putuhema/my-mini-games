@@ -81,7 +81,7 @@
 		width: 1.4rem;
 		height: 0.35rem;
 		border-radius: 0;
-		background: #16231c;
+		background: #162123;
 	}
 
 	.done .led {

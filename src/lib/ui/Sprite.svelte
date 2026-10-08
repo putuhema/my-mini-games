@@ -37,8 +37,8 @@
 		flex-shrink: 0;
 	}
 
-	/* Day: light sprites need a dark pixel outline to read on pale ground. */
-	:global([data-theme='day']) .sprite {
+	/* Light sprites need a dark pixel outline to read on pale ground. */
+	.sprite {
 		filter: drop-shadow(1px 0 0 var(--night)) drop-shadow(-1px 0 0 var(--night))
 			drop-shadow(0 1px 0 var(--night)) drop-shadow(0 -1px 0 var(--night));
 	}

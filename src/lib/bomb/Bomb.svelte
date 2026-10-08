@@ -158,12 +158,12 @@
 	.casing {
 		padding: 0.9rem;
 		border-radius: var(--radius-lg);
-		background: #22332b;
+		background: #223133;
 		box-shadow:
-			inset 0 0 0 3px #34493e,
+			inset 0 0 0 3px #344749,
 			0 0 0 2px var(--gap),
 			0 0 0 4px var(--vine),
-			0 8px 0 4px #121c17;
+			0 8px 0 4px #121b1c;
 	}
 
 	.shake {
@@ -199,8 +199,8 @@
 		gap: 0.7rem;
 		padding: 0.35rem 0.9rem;
 		border-radius: var(--radius-sm);
-		background: #050806;
-		box-shadow: inset 0 0 0 3px #1a2620;
+		background: #050808;
+		box-shadow: inset 0 0 0 3px #1a2526;
 	}
 
 	.digits {
@@ -234,8 +234,8 @@
 		display: grid;
 		place-items: center;
 		border-radius: 0;
-		background: #1a2620;
-		color: #3a5045;
+		background: #1a2526;
+		color: #3a4d50;
 	}
 
 	.strike.on {
@@ -302,7 +302,7 @@
 		flex-direction: row;
 		align-items: center;
 		gap: 0.45rem;
-		background: #0f1813;
+		background: #0f1718;
 		color: var(--snow);
 		box-shadow: inset 0 -3px 0 #000;
 	}
@@ -311,7 +311,7 @@
 		width: 0.75rem;
 		height: 0.75rem;
 		border-radius: 0;
-		background: #3a5045;
+		background: #3a4d50;
 	}
 
 	.lamp.lit {
@@ -332,10 +332,10 @@
 		min-height: 13rem;
 		padding: 1.3rem 1rem 1rem;
 		border-radius: var(--radius);
-		background: #3a5045;
+		background: #3a4d50;
 		box-shadow:
-			inset 0 0 0 3px #4b6457,
-			inset 0 -5px 0 #3a5045;
+			inset 0 0 0 3px #4b6164,
+			inset 0 -5px 0 #3a4d50;
 	}
 
 	.module.flash {
@@ -357,7 +357,7 @@
 		display: grid;
 		place-items: center;
 		border-radius: 0;
-		background: #121c17;
+		background: #121b1c;
 		color: var(--snow);
 	}
 
@@ -367,6 +367,6 @@
 	}
 
 	.solved {
-		background: #2f5a43;
+		background: #2f555a;
 	}
 </style>

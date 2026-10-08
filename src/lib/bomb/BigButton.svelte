@@ -90,7 +90,7 @@
 		color: var(--fg);
 		box-shadow:
 			0 7px 0 var(--shade),
-			0 0 0 6px #3a5045;
+			0 0 0 6px #3a4d50;
 		font-family: var(--font);
 		font-weight: 900;
 		font-size: 0.95rem;
@@ -109,7 +109,7 @@
 		transform: translateY(7px);
 		box-shadow:
 			0 0 0 var(--shade),
-			0 0 0 6px #3a5045;
+			0 0 0 6px #3a4d50;
 	}
 
 	.blue {
@@ -138,8 +138,8 @@
 		width: 1.1rem;
 		height: 7.5rem;
 		border-radius: 0;
-		background: #0f1813;
-		box-shadow: inset 0 0 0 3px #3a5045;
+		background: #0f1718;
+		box-shadow: inset 0 0 0 3px #3a4d50;
 		transition:
 			background 0.15s ease,
 			box-shadow 0.15s ease;
@@ -148,7 +148,7 @@
 	.strip.lit {
 		background: var(--s);
 		box-shadow:
-			inset 0 0 0 3px #3a5045,
+			inset 0 0 0 3px #3a4d50,
 			0 0 18px var(--s);
 	}
 

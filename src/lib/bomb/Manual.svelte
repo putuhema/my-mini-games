@@ -243,7 +243,7 @@
 	code {
 		padding: 0.05rem 0.35rem;
 		border-radius: 0;
-		background: #0f1813;
+		background: #0f1718;
 		color: var(--snow);
 		font-size: 0.85em;
 	}

@@ -1,9 +1,9 @@
 /*
  * Us, Apart design system — "Night Garden".
- * Retro pixel CRT: green-black surfaces, firefly glows (mint for player 2,
- * pink for player 1), VT323 type, hard pixel frames built from stacked
- * box-shadows, and motion that snaps between frames. No rounded corners.
- * Two themes: night (default) and day, picked by data-theme on <html>.
+ * Retro pixel CRT in morning light: pale cyan surfaces, firefly accents
+ * (cyan for player 2, pink for player 1), VT323 type, hard pixel frames built
+ * from stacked box-shadows, and motion that snaps between frames. No rounded
+ * corners. One theme, always light.
  * Live reference: /design
  */
 
@@ -19,61 +19,61 @@
 
 :root {
   /* Surfaces, darkest to lightest */
-  --page: #050b08;
-  --page-glow: #0e2a1c;
-  --soil: #0a1510; /* inset panels */
-  --moss: #0d1d16; /* pressable tiles */
-  --canopy: #11261d; /* cards, dialogs */
-  --well: #050b08; /* sunken: inputs, tracks, meters */
+  --page: #d8ecef;
+  --page-glow: #effafc;
+  --soil: #cce6e9; /* inset panels */
+  --moss: #eaf7f9; /* pressable tiles */
+  --canopy: #f3fcfd; /* cards, dialogs */
+  --well: #c2dfe3; /* sunken: inputs, tracks, meters */
 
   /* Pixel frame: gap ring, frame ring, lip */
-  --gap: #050b08;
-  --vine: #1f4434;
-  --root: #0b1c14;
-  --lip-hot: #12402c;
-  --ring-off: #13261d;
-  --hairline: #86a89638;
+  --gap: #f3fcfd;
+  --vine: #7fadb3;
+  --root: #4c838a;
+  --lip-hot: #0d6d7a;
+  --ring-off: #bdd6d9;
+  --hairline: #2f51552e;
 
   /* Ink */
-  --night: #050b08; /* darkest ink: outlines, hard drops */
-  --dew: #eafff2; /* headings, primary text */
-  --sage: #86a896; /* body, secondary text */
-  --bog: #4d6a5a; /* disabled, placeholders */
-  --on-fill: #050b08; /* text on bright fills */
+  --night: #1d373a; /* darkest ink: outlines, hard drops */
+  --dew: #102224; /* headings, primary text */
+  --sage: #4a666a; /* body, secondary text */
+  --bog: #8aa392; /* disabled, placeholders */
+  --on-fill: #050a0b; /* text on bright fills */
 
   /* Glows: text-safe accent / shade (lip, text on tints) / fill (always bright) */
-  --mint: #6bff9e;
-  --mint-shade: #3fd277;
-  --mint-fill: #6bff9e;
-  --pink: #ff6b9a;
-  --pink-shade: #e5487c;
+  --mint: #0e8a9a;
+  --mint-shade: #0a6874;
+  --mint-fill: #6beeff;
+  --pink: #d6336c;
+  --pink-shade: #a8204f;
   --pink-fill: #ff6b9a;
-  --amber: #ffc44d;
-  --amber-shade: #e0a52c;
+  --amber: #a86f00;
+  --amber-shade: #7d5200;
   --amber-fill: #ffc44d;
-  --lilac: #c9a2ff;
-  --lilac-shade: #a985f0;
+  --lilac: #7a4fd0;
+  --lilac-shade: #5a35a8;
   --lilac-fill: #c9a2ff;
-  --sky: #86bcff;
-  --sky-shade: #5a9bf0;
+  --sky: #2a6fd1;
+  --sky-shade: #1d50a0;
   --sky-fill: #86bcff;
-  --ember: #ff9a4d;
-  --ember-shade: #e57a2a;
+  --ember: #c25a00;
+  --ember-shade: #8f4200;
   --ember-fill: #ff9a4d;
-  --berry: #ff5468;
-  --berry-shade: #e23b4f;
+  --berry: #d12f3d;
+  --berry-shade: #a01f2b;
   --berry-fill: #ff5468;
-  --tint-base: var(--canopy);
-  --tint-amt: 16%;
+  --tint-base: #ffffff;
+  --tint-amt: 14%;
 
   /* Glow strength + effects */
-  --glow-amt: 45%;
+  --glow-amt: 18%;
   --glow-mint: color-mix(in srgb, var(--mint) var(--glow-amt), transparent);
   --glow-pink: color-mix(in srgb, var(--pink) var(--glow-amt), transparent);
   --glow-amber: color-mix(in srgb, var(--amber) var(--glow-amt), transparent);
-  --hard: #020604d9;
-  --scan: #00000026;
-  --well-shadow: #000000e6;
+  --hard: #1d373a40;
+  --scan: #2f515510;
+  --well-shadow: #2f515555;
 
   /* Shape */
   --radius-sm: 0;
@@ -132,7 +132,7 @@
   --p2-shade: var(--mint-shade);
   --p2-fill: var(--mint-fill);
 
-  color-scheme: dark;
+  color-scheme: light;
   font-family: var(--font);
   font-weight: 400;
   font-synthesis: none;
@@ -142,47 +142,6 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Day: the same garden in morning light. Accents deepen so they read as text,
-   glows fade to a hint, the frame gap turns light and the lip turns green. */
-:root[data-theme="day"] {
-  --page: #e6efd8;
-  --page-glow: #f8fcef;
-  --soil: #dce9cc;
-  --moss: #f4f9ea;
-  --canopy: #fafdf3;
-  --well: #d3e3c2;
-  --gap: #fafdf3;
-  --vine: #8fb37f;
-  --root: #5a8a4c;
-  --lip-hot: #0d7a3c;
-  --ring-off: #c9d9bd;
-  --hairline: #2f553d2e;
-  --night: #1d3a2c;
-  --dew: #10241a;
-  --sage: #4a6a53;
-  --bog: #8aa392;
-  --mint: #0e9a49;
-  --mint-shade: #0a7438;
-  --pink: #d6336c;
-  --pink-shade: #a8204f;
-  --amber: #a86f00;
-  --amber-shade: #7d5200;
-  --lilac: #7a4fd0;
-  --lilac-shade: #5a35a8;
-  --sky: #2a6fd1;
-  --sky-shade: #1d50a0;
-  --ember: #c25a00;
-  --ember-shade: #8f4200;
-  --berry: #d12f3d;
-  --berry-shade: #a01f2b;
-  --tint-base: #ffffff;
-  --tint-amt: 14%;
-  --glow-amt: 18%;
-  --hard: #1d3a2c40;
-  --scan: #2f553d10;
-  --well-shadow: #2f553d55;
-  color-scheme: light;
-}
 
 /* Tinted surfaces for every family, mixed from the theme's accent. */
 :root {

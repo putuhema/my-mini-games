@@ -266,7 +266,7 @@
 		gap: 0.4rem;
 		padding: 0.4rem;
 		border-radius: var(--radius);
-		background: repeating-linear-gradient(90deg, #22332b 0 10px, #16231c 10px 13px);
+		background: repeating-linear-gradient(90deg, #223133 0 10px, #162123 10px 13px);
 	}
 
 	.slot {

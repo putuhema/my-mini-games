@@ -1,33 +1,32 @@
 <script lang="ts">
 	import { Sprite } from '#lib/ui/index.ts';
 	import { SPRITES, type SpriteName } from '#lib/ui/sprites.ts';
-	import { theme, toggleTheme } from '#lib/theme.svelte.ts';
 	/*
 	 * "Night Garden" — retro pixel design system.
-	 * A garden after dark on an old CRT: green-black surfaces, firefly mint + pink glow,
+	 * An old CRT in morning light: pale cyan surfaces, firefly cyan + pink accents,
 	 * VT323 type, hard pixel bevels built from stacked box-shadows, scanlines, stepped motion.
 	 * Preview only: tokens are scoped to .px and don't touch src/app.css yet.
 	 */
 
 	const palette = [
-		{ token: 'page', hex: '#050b08', day: '#e6efd8', role: 'Page background' },
-		{ token: 'soil', hex: '#0a1510', day: '#dce9cc', role: 'Inset panels' },
-		{ token: 'moss', hex: '#0d1d16', day: '#f4f9ea', role: 'Pressable tiles, keys' },
-		{ token: 'canopy', hex: '#11261d', day: '#fafdf3', role: 'Cards, dialogs, raised surfaces' },
-		{ token: 'well', hex: '#050b08', day: '#d3e3c2', role: 'Sunken: inputs, tracks, meters' },
-		{ token: 'gap', hex: '#050b08', day: '#fafdf3', role: 'Inner ring around raised things' },
-		{ token: 'vine', hex: '#1f4434', day: '#8fb37f', role: 'Frame ring (idle)' },
-		{ token: 'root', hex: '#0b1c14', day: '#5a8a4c', role: 'Lip under the frame' }
+		{ token: 'page', hex: '#050a0b', day: '#d8ecef', role: 'Page background' },
+		{ token: 'soil', hex: '#0a1415', day: '#cce6e9', role: 'Inset panels' },
+		{ token: 'moss', hex: '#0d1b1d', day: '#eaf7f9', role: 'Pressable tiles, keys' },
+		{ token: 'canopy', hex: '#112426', day: '#f3fcfd', role: 'Cards, dialogs, raised surfaces' },
+		{ token: 'well', hex: '#050a0b', day: '#c2dfe3', role: 'Sunken: inputs, tracks, meters' },
+		{ token: 'gap', hex: '#050a0b', day: '#f3fcfd', role: 'Inner ring around raised things' },
+		{ token: 'vine', hex: '#1f4044', day: '#7fadb3', role: 'Frame ring (idle)' },
+		{ token: 'root', hex: '#0b1a1c', day: '#4c838a', role: 'Lip under the frame' }
 	];
 
 	const ink = [
-		{ token: 'dew', hex: '#eafff2', day: '#10241a', role: 'Headings, primary text' },
-		{ token: 'sage', hex: '#86a896', day: '#4a6a53', role: 'Body, secondary text, idle icons' },
-		{ token: 'bog', hex: '#4d6a5a', day: '#8aa392', role: 'Disabled, missed, dividers' }
+		{ token: 'dew', hex: '#eafdff', day: '#102224', role: 'Headings, primary text' },
+		{ token: 'sage', hex: '#86a4a8', day: '#4a666a', role: 'Body, secondary text, idle icons' },
+		{ token: 'bog', hex: '#4d676a', day: '#8aa392', role: 'Disabled, missed, dividers' }
 	];
 
 	const glow = [
-		{ token: 'mint', day: '#0e9a49', hex: '#6bff9e', shade: '#23a85a', light: '#c9ffdc', role: 'Focus, hover, success, player 2' },
+		{ token: 'mint', day: '#0e8a9a', hex: '#6beeff', shade: '#2398a8', light: '#c9f9ff', role: 'Focus, hover, success, player 2' },
 		{ token: 'pink', day: '#d6336c', hex: '#ff6b9a', shade: '#c4426f', light: '#ffd1e1', role: 'Brand, current turn, player 1' },
 		{ token: 'amber', day: '#b07400', hex: '#ffc44d', shade: '#c98a1e', light: '#ffe6a3', role: 'Rewards, wins, ladders' },
 		{ token: 'lilac', day: '#7a4fd0', hex: '#c9a2ff', shade: '#8466c4', light: '#ecdcff', role: 'Deep talk, secrets' },
@@ -58,7 +57,6 @@
 	let selected = $state('Snakes');
 	let sound = $state(true);
 	let crt = $state(false);
-	const day = $derived(theme.current === 'day');
 	let progress = $state(5);
 	let toast = $state<null | { tone: string; text: string }>(null);
 	let name = $state('');
@@ -85,9 +83,6 @@
 		<a href="/design" class="back frame">&lt; Current system</a>
 		<div class="topbar-end">
 			<span class="chip" style="--cc: var(--mint)">v0 · Preview</span>
-			<button class="frame fbtn sm" onclick={toggleTheme} aria-pressed={day}>
-				{day ? '☾ Night' : '☀ Day'}
-			</button>
 		</div>
 	</header>
 
@@ -102,8 +97,8 @@
 			</h1>
 			<p class="tagline">two lights, one garden.</p>
 			<p class="lede">
-				A retro pixel system for <b>Us, Apart</b>. Picture a garden after dark on an old CRT: green-black
-				surfaces, two fireflies (mint and pink), hard pixel bevels, and motion that snaps between frames.
+				A retro pixel system for <b>Us, Apart</b>. Picture an old CRT in morning light: pale cyan
+				surfaces, two fireflies (cyan and pink), hard pixel bevels, and motion that snaps between frames.
 			</p>
 			<div class="hero-sprites">
 				<Sprite name={'firefly'} scale={8} />
@@ -152,7 +147,7 @@
 					<div class="swatch">
 						<div class="chipcolor" style="background: var(--{c.token})"></div>
 						<strong>--{c.token}</strong>
-						<code>{day ? c.day : c.hex}</code>
+						<code>{c.day}</code>
 						<small>{c.role}</small>
 					</div>
 				{/each}
@@ -164,7 +159,7 @@
 					<div class="swatch">
 						<div class="chipcolor ink" style="color: var(--{c.token})">Aa</div>
 						<strong>--{c.token}</strong>
-						<code>{day ? c.day : c.hex}</code>
+						<code>{c.day}</code>
 						<small>{c.role}</small>
 					</div>
 				{/each}
@@ -186,7 +181,7 @@
 							<span style="background: {c.shade}" title="shade"></span>
 						</div>
 						<code>fill {c.hex}</code>
-						<code style="color: var(--{c.token})">text {day ? c.day : c.hex}</code>
+						<code style="color: var(--{c.token})">text {c.day}</code>
 						<small>{c.role}</small>
 					</div>
 				{/each}
@@ -274,7 +269,7 @@ transition: transform .1s steps(2, end);
 				actions.
 			</p>
 			<div class="row">
-				<button class="btn" style="--bg: var(--mint-fill); --hi: #c9ffdc; --lo: #23a85a">Roll die</button>
+				<button class="btn" style="--bg: var(--mint-fill); --hi: #c9f9ff; --lo: #2398a8">Roll die</button>
 				<button class="btn" style="--bg: var(--pink-fill); --hi: #ffd1e1; --lo: #c4426f">Start game</button>
 				<button class="btn" style="--bg: var(--amber-fill); --hi: #ffe6a3; --lo: #c98a1e">Claim star</button>
 				<button class="btn" style="--bg: var(--lilac-fill); --hi: #ecdcff; --lo: #8466c4">Ask secret</button>
@@ -357,14 +352,6 @@ transition: transform .1s steps(2, end);
 						</span>
 						<input type="checkbox" bind:checked={sound} />
 						<span class="track"><span class="thumb">{sound ? 'ON' : 'OFF'}</span></span>
-					</label>
-					<label class="pref">
-						<span>
-							<b>Day mode</b>
-							<small>Morning light instead of night</small>
-						</span>
-						<input type="checkbox" checked={day} onchange={toggleTheme} />
-						<span class="track"><span class="thumb">{day ? 'ON' : 'OFF'}</span></span>
 					</label>
 					<label class="pref">
 						<span>
@@ -485,7 +472,7 @@ transition: transform .1s steps(2, end);
 --ring: 2px;      /* gap */
 --frame: 4px;     /* ring width */
 --drop: 4px;      /* lip under frame */
---hairline: #86a89638;</code></pre>
+--hairline: #86a4a838;</code></pre>
 				<pre class="panel"><code>/* Motion */
 --snap: steps(2, end);       /* hovers, presses */
 --blink: steps(2, end) 2.2s; /* eyebrows, cursors */
@@ -518,13 +505,13 @@ transition: transform .1s steps(2, end);
 	.px {
 		/* Page-local tokens; everything else comes from src/app.css. */
 		--lip-pink: #3a1226;
-		--vignette: #020604d9;
-		--knob-hi: #b8d4c4;
-		--knob: #86a896;
-		--knob-lo: #4a6b5a;
-		--off-bg: #2b4a3c;
-		--off-hi: #3e5a4b;
-		--off-lo: #1c3328;
+		--vignette: #020606d9;
+		--knob-hi: #b8d1d4;
+		--knob: #86a4a8;
+		--knob-lo: #4a676b;
+		--off-bg: #2b464a;
+		--off-hi: #3e575a;
+		--off-lo: #1c3033;
 		--ease-pop: cubic-bezier(0.2, 1.5, 0.4, 1);
 
 		position: relative;
@@ -541,15 +528,15 @@ transition: transform .1s steps(2, end);
 		overflow-x: hidden;
 	}
 
-	:global([data-theme='day']) .px {
+	.px {
 		--lip-pink: #a8204f;
-		--vignette: #8fb37f40;
+		--vignette: #7fadb340;
 		--knob-hi: #ffffff;
-		--knob: #c4d6b8;
-		--knob-lo: #8fab83;
-		--off-bg: #c9d9bd;
-		--off-hi: #dce9d2;
-		--off-lo: #a9bf9c;
+		--knob: #b8d3d6;
+		--knob-lo: #83a6ab;
+		--off-bg: #bdd6d9;
+		--off-hi: #d2e6e9;
+		--off-lo: #9cbbbf;
 	}
 
 	.px :global(*) {
@@ -889,8 +876,8 @@ transition: transform .1s steps(2, end);
 	.bevel-fill,
 	.btn {
 		--bg: var(--mint);
-		--hi: #c9ffdc;
-		--lo: #23a85a;
+		--hi: #c9f9ff;
+		--lo: #2398a8;
 		background: linear-gradient(
 			180deg,
 			var(--hi) 0 4px,
@@ -1260,7 +1247,7 @@ transition: transform .1s steps(2, end);
 	}
 	.pref input:checked + .track .thumb {
 		transform: translateX(30px);
-		background: linear-gradient(180deg, #c9ffdc 0 4px, var(--mint-fill) 4px calc(100% - 5px), #23a85a calc(100% - 5px) 100%);
+		background: linear-gradient(180deg, #c9f9ff 0 4px, var(--mint-fill) 4px calc(100% - 5px), #2398a8 calc(100% - 5px) 100%);
 		box-shadow:
 			0 2px var(--hard),
 			0 0 12px var(--glow-mint);
@@ -1322,7 +1309,7 @@ transition: transform .1s steps(2, end);
 		background: var(--ring-off);
 	}
 	.meter span.on {
-		background: linear-gradient(180deg, #c9ffdc 0 3px, var(--mint-fill) 3px calc(100% - 4px), #23a85a calc(100% - 4px) 100%);
+		background: linear-gradient(180deg, #c9f9ff 0 3px, var(--mint-fill) 3px calc(100% - 4px), #2398a8 calc(100% - 4px) 100%);
 		box-shadow: 0 0 8px var(--glow-mint);
 	}
 	.meter span.tip {
@@ -1459,8 +1446,8 @@ transition: transform .1s steps(2, end);
 		display: block;
 		image-rendering: pixelated;
 	}
-	:global([data-theme='day']) .tile.locked :global(svg),
-	:global([data-theme='day']) .hearts .empty :global(svg) {
+	.tile.locked :global(svg),
+	.hearts .empty :global(svg) {
 		filter: grayscale(1) opacity(0.4);
 	}
 	.sprites {

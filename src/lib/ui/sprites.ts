@@ -10,7 +10,7 @@ export const SPRITES = {
 	},
 	heartMint: {
 		rows: ['.pp.pp.', 'pwpppPp', 'ppppppP', '.pppPP.', '..pPP..', '...P...'],
-		colors: { p: '#6bff9e', P: '#23a85a', w: '#c9ffdc' }
+		colors: { p: '#6beeff', P: '#2398a8', w: '#c9f9ff' }
 	},
 	star: {
 		rows: ['...g...', '...g...', '..gwg..', 'ggggggG', '.gggGG.', '.gG.GG.', 'gG...GG'],
@@ -18,15 +18,15 @@ export const SPRITES = {
 	},
 	bomb: {
 		rows: ['.....o.', '....o..', '...cc..', '.cccccc', 'cwccccC', 'ccccccC', 'cccccCC', '.cCCCC.'],
-		colors: { c: '#2b4a3c', C: '#16301f', w: '#86a896', o: '#ffb347' }
+		colors: { c: '#2b464a', C: '#162d30', w: '#86a4a8', o: '#ffb347' }
 	},
 	die: {
 		rows: ['ffffff.', 'fkfffkF', 'ffffffF', 'fffkffF', 'ffffffF', 'fkfffkF', '.FFFFFF'],
-		colors: { f: '#eafff2', F: '#86a896', k: '#050b08' }
+		colors: { f: '#eafdff', F: '#86a4a8', k: '#050a0b' }
 	},
 	firefly: {
 		rows: ['.a....a.', '..a..a..', '..bbbb..', '.wbbbbw.', 'wwbbbbww', '.wggggw.', '..gGGg..', '...gg...'],
-		colors: { a: '#86a896', b: '#3e5a4b', w: '#c9ffdc', g: '#d4f55c', G: '#fffbd0' }
+		colors: { a: '#86a4a8', b: '#3e575a', w: '#c9f9ff', g: '#d4f55c', G: '#d0faff' }
 	},
 	snake: {
 		rows: [
@@ -38,7 +38,7 @@ export const SPRITES = {
 			'cC.cccCc....',
 			'.....CC.....'
 		],
-		colors: { c: '#6bff9e', C: '#23a85a', k: '#050b08', r: '#ff6b9a' }
+		colors: { c: '#6beeff', C: '#2398a8', k: '#050a0b', r: '#ff6b9a' }
 	},
 	ladder: {
 		rows: ['g.....g', 'ggggggg', 'g.....g', 'ggggggg', 'g.....g', 'ggggggg', 'g.....g'],
@@ -46,11 +46,11 @@ export const SPRITES = {
 	},
 	chat: {
 		rows: ['.ccccc.', 'cccccccC', 'cwcwcwcC', 'cccccccC', '.cccccC.', '..cC....', '.c......'],
-		colors: { c: '#c9a2ff', C: '#8466c4', w: '#050b08' }
+		colors: { c: '#c9a2ff', C: '#8466c4', w: '#050a0b' }
 	},
 	burger: {
 		rows: ['..bbbb..', '.bwbbbb.', 'bbbbbbbb', 'gggggggg', 'mmmmmmmm', 'cccccccc', 'bbbbbbbb', '.BBBBBB.'],
-		colors: { b: '#ffb347', B: '#c26a1a', w: '#fff2c4', g: '#6bff9e', m: '#8a4b2a', c: '#ffc44d' }
+		colors: { b: '#ffb347', B: '#c26a1a', w: '#fff2c4', g: '#6beeff', m: '#8a4b2a', c: '#ffc44d' }
 	}
 } satisfies Record<string, SpriteData>;
 

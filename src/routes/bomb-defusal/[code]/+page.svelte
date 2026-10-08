@@ -601,7 +601,7 @@
 	.hint.live {
 		padding: 0.7rem 1rem;
 		border-radius: var(--radius);
-		background: #22332b;
+		background: #223133;
 		color: var(--snow);
 	}
 

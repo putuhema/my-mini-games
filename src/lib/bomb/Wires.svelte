@@ -67,7 +67,7 @@
 		flex-shrink: 0;
 		border-radius: 0;
 		background: #7f998b;
-		box-shadow: inset 0 -3px 0 #5a7366;
+		box-shadow: inset 0 -3px 0 #5a7073;
 	}
 
 	.strand {

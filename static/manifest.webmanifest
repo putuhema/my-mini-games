@@ -4,8 +4,8 @@
 	"description": "Mini games for long-distance couples.",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#050b08",
-	"theme_color": "#050b08",
+	"background_color": "#d8ecef",
+	"theme_color": "#d8ecef",
 	"icons": [
 		{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
 		{ "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },

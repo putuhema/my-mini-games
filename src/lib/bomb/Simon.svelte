@@ -82,7 +82,7 @@
 		aspect-ratio: 1;
 		border: none;
 		border-radius: var(--radius-sm);
-		background: color-mix(in srgb, var(--c) 38%, #0f1813);
+		background: color-mix(in srgb, var(--c) 38%, #0f1718);
 		box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.35);
 		cursor: pointer;
 		touch-action: manipulation;

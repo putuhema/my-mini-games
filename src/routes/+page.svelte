@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Badge, Button, Card, Sprite, ThemeToggle } from '#lib/ui/index.ts';
+	import { Badge, Button, Card, Sprite } from '#lib/ui/index.ts';
 	import {
 		BombIcon,
 		HamburgerIcon,
@@ -41,7 +41,6 @@
 	<a href="/" class="logo">us, apart</a>
 	<nav class="nav">
 		<a href="/design" class="design-link">Design system</a>
-		<ThemeToggle />
 	</nav>
 </header>
 

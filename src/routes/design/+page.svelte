@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Dice3D from '#lib/snakes/Dice3D.svelte';
-	import { Badge, Button, Card, ChoiceTile, ProgressBar, Stat, ThemeToggle, Toast } from '#lib/ui/index.ts';
+	import { Badge, Button, Card, ChoiceTile, ProgressBar, Stat, Toast } from '#lib/ui/index.ts';
 	import {
 		CATEGORY_ICON,
 		ChatCircleDotsIcon,
@@ -71,7 +71,6 @@
 	<a href="/" class="logo">us, apart</a>
 	<nav class="nav">
 		<a href="/design/pixel" class="spec-link">Full spec ↗</a>
-		<ThemeToggle />
 	</nav>
 </header>
 
@@ -79,8 +78,8 @@
 	<section class="intro">
 		<h1>Design system</h1>
 		<p class="muted">
-			<b>Night Garden</b>: a retro pixel CRT look with green-black surfaces, firefly glows (pink and
-			mint for the two of you), hard pixel frames and stepped motion. Every component on this page is
+			<b>Night Garden</b>: a retro pixel CRT look in morning light: pale cyan surfaces, firefly
+			accents (pink and cyan for the two of you), hard pixel frames and stepped motion. Every component on this page is
 			the real one. Tokens live in <code>src/app.css</code>, components in <code>src/lib/ui</code>, and
 			the full spec is at <a href="/design/pixel">/design/pixel</a>.
 		</p>
