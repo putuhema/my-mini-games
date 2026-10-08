@@ -238,6 +238,32 @@ export const sfx = {
 		noise({ at: 0.05, dur: 1.2, gain: 0.25, freq: 1800, q: 0.5 });
 	}),
 
+	/** An ingredient landing on the burger: soft plop. */
+	plop: play(() => {
+		tone({ freq: 260, to: 120, dur: 0.12, gain: 0.25 });
+		noise({ dur: 0.05, gain: 0.08, freq: 900, type: 'lowpass' });
+	}),
+
+	/** A patty hitting the grill: hiss of noise. */
+	sizzle: play(() => {
+		noise({ dur: 0.7, gain: 0.14, freq: 6000, q: 0.6 });
+		noise({ at: 0.05, dur: 0.5, gain: 0.08, freq: 3000, q: 1 });
+	}),
+
+	/** The serve bell on the counter. */
+	bell: play(() => {
+		tone({ freq: 1760, dur: 0.9, gain: 0.14 });
+		tone({ freq: 2637, dur: 0.6, gain: 0.05 });
+		tone({ freq: 1765, type: 'triangle', dur: 0.9, gain: 0.06 });
+	}),
+
+	/** Tips: a cash register "ka-ching". */
+	cash: play(() => {
+		noise({ dur: 0.06, gain: 0.2, freq: 3000, q: 2 });
+		tone({ freq: E6, type: 'square', at: 0.08, dur: 0.12, gain: 0.06 });
+		tone({ freq: G6 * 1.335, type: 'square', at: 0.16, dur: 0.35, gain: 0.06 });
+	}),
+
 	/** Winning fanfare. */
 	win: play(() => {
 		const notes: [number, number, number][] = [

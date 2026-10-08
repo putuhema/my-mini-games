@@ -71,6 +71,49 @@ const bombModule = v.union(
 	})
 );
 
+const doneness = v.union(v.literal('raw'), v.literal('cooked'), v.literal('burnt'));
+
+/** Burger for Two: one component of a dish (a burger layer, a skewer, a meatball…).
+ * See convex/burger/ingredients.ts. */
+export const burgerLayer = v.object({ ing: v.string(), state: v.optional(doneness) });
+
+export const burgerOrder = v.object({
+	customer: v.string(),
+	name: v.string(),
+	/** burger | sate | noodle (convex/burger/dishes.ts); absent on orders from before the menu. */
+	dish: v.optional(v.string()),
+	/** Burgers run bottom to top. */
+	layers: v.array(burgerLayer),
+	text: v.string(),
+	picture: v.boolean(),
+	seconds: v.number(),
+	/** A change of mind, shown to the cashier partway through the clock. */
+	followUp: v.optional(v.object({ at: v.number(), text: v.string(), layers: v.array(burgerLayer) }))
+});
+
+export const burgerDifficulty = v.union(v.literal('chill'), v.literal('busy'), v.literal('rush'));
+
+export const burgerResult = v.object({
+	/** The order as it stood when served (after any change of mind). */
+	order: burgerOrder,
+	served: v.array(burgerLayer),
+	servedDish: v.optional(v.string()),
+	wrongDish: v.optional(v.boolean()),
+	score: v.number(),
+	percent: v.number(),
+	stars: v.number(),
+	tier: v.union(v.literal('perfect'), v.literal('close'), v.literal('confused'), v.literal('angry')),
+	tip: v.number(),
+	correct: v.number(),
+	missing: v.number(),
+	extra: v.number(),
+	wrongDoneness: v.number(),
+	reaction: v.string(),
+	review: v.string(),
+	msLeft: v.number(),
+	timedOut: v.boolean()
+});
+
 export const difficulty = v.union(v.literal('easy'), v.literal('normal'), v.literal('hard'));
 
 export default defineSchema({
@@ -180,6 +223,58 @@ export default defineSchema({
 			})
 		)
 	}).index('by_code', ['code']),
+
+	/** Burger for Two: a cashier hears the order, a chef builds it. See convex/kitchen.ts. */
+	burgerRooms: defineTable({
+		code: v.string(),
+		status: v.union(
+			/** One player so far. */
+			v.literal('waiting'),
+			/** Both here: pick roles. */
+			v.literal('lobby'),
+			v.literal('cooking'),
+			/** The burger was served; both screens show the reaction. */
+			v.literal('served'),
+			/** End of the shift: customer reviews. */
+			v.literal('reviews')
+		),
+		players: v.array(v.object({ id: v.string(), name: v.string() })),
+		cashierId: v.string(),
+		shift: v.number(),
+		customerIndex: v.number(),
+		/** The whole shift's orders. Never sent to the chef while cooking. */
+		orders: v.array(burgerOrder),
+		difficulty: v.optional(burgerDifficulty),
+		/** What the chef is making for this customer: picked by the chef, who has to ask. */
+		dish: v.optional(v.string()),
+		/** The chef's dish in progress (a burger runs bottom to top). */
+		stack: v.array(burgerLayer),
+		/** Set once the current customer's change of mind has been shown to the cashier. */
+		followUpShown: v.optional(v.boolean()),
+		/** Each cooker slot (grill or pot) holds an ingredient and when it went in; doneness
+		 * follows from the time. */
+		grill: v.array(v.union(v.null(), v.object({ ing: v.string(), placedAt: v.number() }))),
+		/** The customer walks in; the clock starts here. */
+		startedAt: v.optional(v.number()),
+		deadline: v.optional(v.number()),
+		results: v.array(burgerResult),
+		history: v.array(
+			v.object({
+				shift: v.number(),
+				cashierName: v.string(),
+				chefName: v.string(),
+				stars: v.number(),
+				tips: v.number()
+			})
+		)
+	}).index('by_code', ['code']),
+
+	/** Burger for Two heartbeats, kept apart from the room so they don't rewrite it. */
+	burgerPresence: defineTable({
+		roomId: v.id('burgerRooms'),
+		playerId: v.string(),
+		lastSeen: v.number()
+	}).index('by_roomId_and_playerId', ['roomId', 'playerId']),
 
 	/** Web Push subscriptions, one per device, for turn reminders. */
 	pushSubscriptions: defineTable({

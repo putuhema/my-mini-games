@@ -52,12 +52,36 @@ import BookOpenIcon from 'phosphor-svelte/lib/BookOpenIcon';
 import ArrowsLeftRightIcon from 'phosphor-svelte/lib/ArrowsLeftRightIcon';
 import SealCheckIcon from 'phosphor-svelte/lib/SealCheckIcon';
 import HeadsetIcon from 'phosphor-svelte/lib/HeadsetIcon';
+import CashRegisterIcon from 'phosphor-svelte/lib/CashRegisterIcon';
+import CookingPotIcon from 'phosphor-svelte/lib/CookingPotIcon';
+import HamburgerIcon from 'phosphor-svelte/lib/HamburgerIcon';
+import ChefHatIcon from 'phosphor-svelte/lib/ChefHatIcon';
+import ArrowUUpLeftIcon from 'phosphor-svelte/lib/ArrowUUpLeftIcon';
+import BellSimpleRingingIcon from 'phosphor-svelte/lib/BellSimpleRingingIcon';
+import ShuffleIcon from 'phosphor-svelte/lib/ShuffleIcon';
+import CoinsIcon from 'phosphor-svelte/lib/CoinsIcon';
+import WifiSlashIcon from 'phosphor-svelte/lib/WifiSlashIcon';
+import ClockIcon from 'phosphor-svelte/lib/ClockIcon';
+import HourglassIcon from 'phosphor-svelte/lib/HourglassIcon';
+import StorefrontIcon from 'phosphor-svelte/lib/StorefrontIcon';
 import SnakeIcon from './SnakeIcon.svelte';
 
 export type IconProps = ComponentProps<typeof HeartIcon>;
 export type Icon = Component<IconProps>;
 
 export {
+	CashRegisterIcon,
+	CookingPotIcon,
+	HamburgerIcon,
+	ChefHatIcon,
+	ArrowUUpLeftIcon,
+	BellSimpleRingingIcon,
+	ShuffleIcon,
+	CoinsIcon,
+	WifiSlashIcon,
+	ClockIcon,
+	HourglassIcon,
+	StorefrontIcon,
 	BombIcon,
 	BookOpenIcon,
 	ArrowsLeftRightIcon,
