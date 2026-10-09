@@ -17,6 +17,7 @@ import type * as burger_orders from "../burger/orders.js";
 import type * as burger_scoring from "../burger/scoring.js";
 import type * as court from "../court.js";
 import type * as court_case from "../court/case.js";
+import type * as court_cases_amal from "../court/cases/amal.js";
 import type * as court_cases_bansos from "../court/cases/bansos.js";
 import type * as court_cases_berlian from "../court/cases/berlian.js";
 import type * as court_cases_index from "../court/cases/index.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   "burger/scoring": typeof burger_scoring;
   court: typeof court;
   "court/case": typeof court_case;
+  "court/cases/amal": typeof court_cases_amal;
   "court/cases/bansos": typeof court_cases_bansos;
   "court/cases/berlian": typeof court_cases_berlian;
   "court/cases/index": typeof court_cases_index;

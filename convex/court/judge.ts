@@ -11,8 +11,6 @@ export type Board = {
 	discredited: Set<string>;
 	/** Fakta yang sudah menjadi bagian kontradiksi yang ditemukan. */
 	contradicted: Set<string>;
-	/** Berapa kali pihak ini sudah memakai seruan emosional. */
-	appeals: number;
 };
 
 export type Ruling = {
@@ -22,134 +20,137 @@ export type Ruling = {
 	contradiction?: { a: string; b: string; text: string };
 };
 
-/** Klaim yang butuh bukti: bisa dijawab dengan "Minta bukti". */
-export const CLAIM_TYPES: ArgType[] = ['timeline', 'opportunity', 'motive', 'identity', 'alternative', 'connect', 'doubt', 'reframe'];
+/** Klaim yang butuh bukti: bisa dijawab dengan "Tuntut bukti". */
+export const CLAIM_TYPES: ArgType[] = ['accuse', 'challenge', 'doubt'];
 
-const WHAT: Record<string, string> = { timeline: 'kronologi', opportunity: 'kesempatan', motive: 'motif', identity: 'identitas' };
+const ASPECTS = ['kesempatan', 'motif', 'identitas', 'kronologi'] as const;
+const ASPECT_OF: Record<string, (typeof ASPECTS)[number]> = {
+	opportunity: 'kesempatan',
+	motive: 'motif',
+	identity: 'identitas',
+	timeline: 'kronologi'
+};
+
+const joinAnd = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} dan ${xs.at(-1)}`);
 
 export function rule(arg: { argType: ArgType; suspect?: string; cites: string[] }, board: Board, t: CaseTools): Ruling {
-	const { argType, cites } = arg;
-	const accused = t.case.public.accused;
-	const suspect = arg.suspect && arg.suspect in t.case.public.suspects ? arg.suspect : accused;
-	const who = t.name(suspect);
+	const { cites } = arg;
 	const label = (k: string) => t.factLabel(k);
-	const list = (keys: string[]) => keys.join(', ');
+	// Ringkas: E1 untuk bukti, "keterangan Mang Udin" untuk saksi.
+	const short = (k: string) => (k.includes('.') ? `keterangan ${t.case.public.witnesses[k.split('.')[0]]?.short ?? k}` : k);
+	const list = (keys: string[]) => [...new Set(keys.map(short))].join(', ');
 
-	// Jaksa berargumen terhadap terdakwa; pembela tentang siapa pun selain terdakwa.
-	const aligned = board.side === 'prosecution' ? suspect === accused : suspect !== accused;
-	const supporting = (type?: string) =>
-		cites.filter((key) => {
-			if (board.discredited.has(key)) return false;
-			const supports = t.fact(key)?.supports ?? [];
-			return supports.some((s) => (type ? s === `${type}:${suspect}` : s.endsWith(`:${suspect}`)));
-		});
-
-	switch (argType) {
-		case 'timeline':
-		case 'opportunity':
-		case 'motive':
-		case 'identity': {
-			if (!cites.length) return { reaction: 'unverified', text: 'Dicatat — klaim ini belum terbukti.' };
-			if (!aligned) return { reaction: 'weak', text: `Saudara, argumen tentang ${who} itu justru menguntungkan pihak lawan.` };
-			const ok = supporting(argType);
-			const what = WHAT[argType];
-			if (ok.length >= 2) return { reaction: 'strong', text: `Majelis menilai ${what} ${who} didukung kuat (${list(ok)}).` };
-			if (ok.length === 1) return { reaction: 'accepted', text: `Diterima: ${ok[0]} mendukung ${what} ${who}.` };
-			return { reaction: 'weak', text: `Bukti yang dikutip tidak menunjukkan ${what} ${who}.` };
-		}
-
-		case 'authenticity': {
-			const target = cites[0];
-			if (!target) return { reaction: 'overruled', text: 'Ditolak. Apa yang digugat, Saudara?' };
-			if (t.fact(target)?.authentic === false) {
-				return { reaction: 'sustained', text: `Dikabulkan. Keaslian ${label(target)} tidak dapat dipastikan; dikesampingkan.`, discredit: target };
+	switch (arg.argType) {
+		case 'accuse': {
+			const accused = t.case.public.accused;
+			const suspect = arg.suspect && arg.suspect in t.case.public.suspects ? arg.suspect : accused;
+			const who = t.name(suspect);
+			const how = `Kutip bukti yang menunjukkan kesempatan, motif, identitas, atau kronologi ${who}.`;
+			if (board.side === 'prosecution' && suspect !== accused) {
+				return { reaction: 'weak', text: `Saudara Jaksa, menunjuk ${who} justru membantu pembela. Tuduhan Jaksa harus mengarah ke terdakwa.` };
 			}
-			return { reaction: 'overruled', text: `Ditolak. ${label(target)} asli.` };
+			if (board.side === 'defense' && suspect === accused) {
+				return { reaction: 'weak', text: `Saudara Penasihat Hukum, itu justru memberatkan klien Saudara. Pilih tokoh lain untuk dituduh.` };
+			}
+			if (!cites.length) return { reaction: 'unverified', text: `Dicatat: Saudara menunjuk ${who}, tanpa bukti. ${how}` };
+
+			// Untuk tiap kutipan: aspek apa yang ditopangnya tentang orang ini.
+			const aspects = new Set<string>();
+			const ok: string[] = [];
+			const notes: string[] = [];
+			for (const key of cites) {
+				const supports = t.fact(key)?.supports ?? [];
+				const mine = supports.filter((x) => x.endsWith(`:${suspect}`));
+				if (board.discredited.has(key)) {
+					notes.push(`${short(key)} sudah dikesampingkan`);
+				} else if (mine.length) {
+					ok.push(key);
+					for (const x of mine) aspects.add(ASPECT_OF[x.split(':')[0]]);
+				} else {
+					const elsewhere = supports.map((x) => x.split(':')[1]).find((id) => id !== suspect);
+					notes.push(elsewhere ? `${short(key)} justru mengarah ke ${t.name(elsewhere)}` : `${short(key)} tidak berkaitan dengan ${who}`);
+				}
+			}
+			const what = joinAnd(ASPECTS.filter((a) => aspects.has(a)));
+			const aside = notes.length ? ` (${notes.join('; ')}.)` : '';
+			if (ok.length >= 2) return { reaction: 'strong', text: `Majelis menilai ${what} ${who} didukung kuat oleh ${list(ok)}.${aside}` };
+			if (ok.length === 1) {
+				return { reaction: 'accepted', text: `Diterima: ${short(ok[0])} menunjukkan ${what} ${who}.${aside} Satu bukti lagi akan membuatnya kuat.` };
+			}
+			return { reaction: 'weak', text: `Belum meyakinkan: ${notes.join('; ')}. ${how}` };
 		}
 
-		case 'reliability': {
+		case 'challenge': {
 			const target = cites[0];
 			const f = target ? t.fact(target) : undefined;
-			if (!target || !f) return { reaction: 'overruled', text: 'Ditolak. Apa yang digugat, Saudara?' };
-			if (board.discredited.has(target)) return { reaction: 'noted', text: `${label(target)} sudah dikesampingkan.` };
-			const by = cites.slice(1).find((c) => f.underminedBy?.includes(c) && !board.discredited.has(c));
+			if (!target || !f) return { reaction: 'overruled', text: 'Ditolak. Kutip dulu bukti atau keterangan yang Saudara bantah.' };
+			if (board.discredited.has(target)) return { reaction: 'noted', text: `${label(target)} sudah dikesampingkan sebelumnya.` };
+			const rest = cites.slice(1).filter((c) => !board.discredited.has(c));
+
+			if (f.authentic === false) {
+				return { reaction: 'sustained', text: `Dikabulkan. Keaslian ${label(target)} tidak dapat dipastikan; dikesampingkan.`, discredit: target };
+			}
+			const by = rest.find((c) => f.underminedBy?.includes(c));
 			if (by) return { reaction: 'sustained', text: `Dikabulkan. Mengingat ${label(by)}, ${label(target)} tidak dapat diandalkan.`, discredit: target };
+			const reframe = rest.find((c) => f.reframedBy?.includes(c));
+			if (reframe) {
+				return { reaction: 'accepted', text: `Diterima. Dibaca bersama ${label(reframe)}, ${label(target)} kehilangan bobotnya.`, discredit: target };
+			}
+			// Saksi yang sudah tertangkap bertentangan kehilangan kredibilitasnya.
+			const witness = target.includes('.') ? target.split('.')[0] : undefined;
+			const caught = witness && [...board.contradicted].find((k) => k.startsWith(`${witness}.`));
+			if (caught) return { reaction: 'sustained', text: `Dikabulkan. Saksi sudah terbukti bertentangan (${label(caught)}); keterangannya diragukan.`, discredit: target };
 			if (f.reliability === 'unreliable') return { reaction: 'sustained', text: `Dikabulkan. ${label(target)} terlalu lemah untuk dipegang.`, discredit: target };
-			if (f.reliability === 'contradictory') return { reaction: 'weak', text: `${label(target)} memang diragukan, tapi Saudara belum menunjukkan sebabnya.` };
-			return { reaction: 'overruled', text: `Ditolak. Tak ada di catatan sidang yang melemahkan ${label(target)}.` };
+
+			if (f.reliability === 'contradictory') {
+				return { reaction: 'weak', text: `${label(target)} memang diragukan, tapi Saudara belum menunjukkan sebabnya. Kutip hal yang bertentangan dengannya.` };
+			}
+			if (!rest.length) {
+				return { reaction: 'unverified', text: `Bantahan atas ${label(target)} dicatat, tanpa dasar. Bantahan butuh bukti tandingan, keterangan saksi, atau catatan pengadilan.` };
+			}
+			return {
+				reaction: 'overruled',
+				text: `Ditolak. ${list(rest)} tidak melemahkan ${label(target)}. Cari bukti yang membantah isinya langsung, atau tanyakan saksi lebih dulu.`
+			};
 		}
 
 		case 'contradiction': {
 			const [a, b] = cites;
-			if (!a || !b) return { reaction: 'overruled', text: 'Ditolak. Kontradiksi butuh dua hal.' };
+			if (!a || !b) return { reaction: 'overruled', text: 'Ditolak. Kontradiksi butuh tepat dua hal.' };
 			const found = t.findContradiction(a, b);
-			if (!found) return { reaction: 'overruled', text: `Ditolak. ${label(a)} dan ${label(b)} bisa sama-sama benar.` };
+			if (!found) {
+				return {
+					reaction: 'overruled',
+					text: `Ditolak. ${label(a)} dan ${label(b)} bisa sama-sama benar. Kontradiksi biasanya soal waktu, tempat, atau orang yang sama.`
+				};
+			}
 			if (board.contradicted.has(a) && board.contradicted.has(b)) return { reaction: 'noted', text: 'Majelis sudah mencatat kontradiksi itu.' };
 			return { reaction: 'contradiction', text: found.text, contradiction: found };
 		}
 
 		case 'doubt': {
-			if (!cites.length) return { reaction: 'unverified', text: 'Keraguan diajukan. Atas dasar apa, Saudara?' };
+			const how = 'Keraguan butuh lubang nyata: kutip bukti yang sudah dikesampingkan atau bagian dari kontradiksi yang ditemukan.';
+			if (!cites.length) return { reaction: 'unverified', text: `Keraguan diajukan tanpa dasar. ${how}` };
 			const holes = cites.filter((c) => board.discredited.has(c) || board.contradicted.has(c));
-			if (holes.length >= 2) return { reaction: 'strong', text: `Majelis mencatat lubang nyata dalam dakwaan: ${list(holes)}.` };
-			if (holes.length === 1) return { reaction: 'accepted', text: `Dicatat: ${label(holes[0])} melemahkan dakwaan.` };
-			return { reaction: 'weak', text: 'Bukti yang dikutip belum tergoyahkan. Keraguan butuh alasan.' };
+			if (holes.length >= 2) return { reaction: 'strong', text: `Majelis mencatat lubang nyata: ${list(holes)}.` };
+			if (holes.length === 1) return { reaction: 'accepted', text: `Dicatat: ${label(holes[0])} melemahkan cerita lawan.` };
+			return { reaction: 'weak', text: `${list(cites)} belum tergoyahkan. ${how}` };
 		}
 
-		case 'emotional':
-			return board.appeals
-				? { reaction: 'weak', text: 'Saudara diminta tetap pada pembuktian.' }
-				: { reaction: 'noted', text: 'Majelis tersentuh. Namun perasaan bukanlah alat bukti.' };
-
-		case 'reframe': {
-			const target = cites[0];
-			const f = target ? t.fact(target) : undefined;
-			if (!target || !f) return { reaction: 'unverified', text: 'Tafsir ulang atas apa, Saudara?' };
-			const by = cites.slice(1).find((c) => f.reframedBy?.includes(c) && !board.discredited.has(c));
-			if (by) return { reaction: 'accepted', text: `Diterima. Dibaca bersama ${label(by)}, ${label(target)} kehilangan bobotnya.`, discredit: target };
-			if (cites.length === 1) return { reaction: 'unverified', text: `Tafsir baru atas ${label(target)}, belum ada pendukungnya.` };
-			return { reaction: 'weak', text: `Bukti yang dikutip tidak mendukung tafsir itu atas ${label(target)}.` };
-		}
-
-		case 'credibility': {
-			const target = cites[0];
-			const witness = target?.includes('.') ? target.split('.')[0] : undefined;
-			if (!witness) return { reaction: 'overruled', text: 'Ditolak. Kutip keterangan saksinya, Saudara.' };
-			const keys = [...board.onRecord, ...board.contradicted].filter((k) => k.startsWith(`${witness}.`));
-			const caught = keys.find((k) => board.contradicted.has(k));
-			const undermined = keys.find((k) => t.testimony[k]?.underminedBy?.some((u) => board.onRecord.has(u) && cites.includes(u)));
-			const k = caught ?? undermined;
-			if (k) return { reaction: 'sustained', text: `Dikabulkan. Keterangan saksi (${label(k)}) diragukan.`, discredit: k };
-			return { reaction: 'overruled', text: 'Ditolak. Tak ada di catatan sidang yang meruntuhkan saksi ini.' };
-		}
-
-		case 'alternative': {
-			if (suspect === accused) return { reaction: 'weak', text: 'Pelaku lain harus orang selain terdakwa.' };
-			if (!cites.length) return { reaction: 'unverified', text: `Majelis mencatat Saudara menunjuk ${who}. Atas dasar apa?` };
-			if (board.side === 'prosecution') return { reaction: 'weak', text: `Saudara Jaksa, menunjuk ${who} justru membantu pembela.` };
-			const ok = supporting();
-			if (ok.length >= 2) return { reaction: 'strong', text: `Pelaku lain yang meyakinkan: ${list(ok)} mengarah ke ${who}.` };
-			if (ok.length === 1) return { reaction: 'accepted', text: `Dicatat: ${label(ok[0])} mengarah ke ${who}.` };
-			return { reaction: 'weak', text: `Tak ada yang dikutip mengaitkan ${who} dengan perkara ini.` };
-		}
-
-		case 'connect': {
-			if (cites.length < 2) return { reaction: cites.length ? 'weak' : 'unverified', text: 'Menghubungkan bukti butuh paling sedikit dua hal.' };
-			if (!aligned) return { reaction: 'weak', text: `Saudara, menghubungkan bukti ke ${who} justru menguntungkan pihak lawan.` };
-			const ok = supporting();
-			if (ok.length >= 3) return { reaction: 'strong', text: `Rangkaian yang kuat: ${list(ok)} semuanya mengarah ke ${who}.` };
-			if (ok.length === 2) return { reaction: 'accepted', text: `Diterima: ${list(ok)} mengarah ke arah yang sama.` };
-			return { reaction: 'weak', text: 'Majelis tidak melihat hubungannya.' };
-		}
+		default:
+			return { reaction: 'noted', text: 'Dicatat.' };
 	}
 }
 
 /** Menilai ulang klaim tersegel dengan cadangannya, untuk "Minta bukti". */
 export function proves(arg: { argType: ArgType; suspect?: string; cites: string[] }, backing: string[], board: Board, t: CaseTools) {
-	if (!backing.length) return false;
+	if (!backing.length) return undefined;
 	const r = rule({ ...arg, cites: [...arg.cites, ...backing] }, board, t);
-	return r.reaction === 'strong' || r.reaction === 'accepted' || r.reaction === 'sustained';
+	return r.reaction === 'strong' || r.reaction === 'accepted' || r.reaction === 'sustained' ? r : undefined;
 }
+
+/** Kalah di atas kertas, tapi ada cadangan tersegel: klaim menunggu diuji, tanpa membocorkan apa pun. */
+export const BLUFFABLE: Reaction[] = ['weak', 'overruled', 'unverified'];
 
 // ---------- Putusan cadangan ----------
 

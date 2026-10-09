@@ -44,39 +44,57 @@ export const CLOSING_SECONDS = 180;
 export const MAX_TEXT = 600;
 export const MAX_OPENING = 900;
 
-export type ArgType =
-	| 'timeline'
-	| 'opportunity'
-	| 'motive'
-	| 'identity'
-	| 'authenticity'
-	| 'reliability'
-	| 'contradiction'
-	| 'doubt'
-	| 'emotional'
-	| 'reframe'
-	| 'credibility'
-	| 'alternative'
-	| 'connect';
+/**
+ * Empat langkah argumen. Majelis sendiri yang menilai sisi mana yang terbukti:
+ * kesempatan, motif, identitas atau kronologi untuk Tuduh; keaslian, keandalan,
+ * kredibilitas saksi atau tafsir lain untuk Bantah.
+ */
+export type ArgType = 'accuse' | 'challenge' | 'contradiction' | 'doubt';
 
 /** `suspect`: argumen tentang seseorang. `target`: kutipan pertama yang diserang. `pair`: tepat dua kutipan. */
 export const ARG_TYPES: Record<
 	ArgType,
-	{ label: string; group: 'evidence' | 'rhetoric'; hint: string; suspect?: boolean; target?: boolean; pair?: boolean }
+	{ label: string; key: string; hint: Record<Side, string>; example: string; suspect?: boolean; target?: boolean; pair?: boolean }
 > = {
-	timeline: { label: 'Tetapkan Kronologi', group: 'evidence', hint: 'Tempatkan seseorang pada suatu waktu.', suspect: true },
-	opportunity: { label: 'Tetapkan Kesempatan', group: 'evidence', hint: 'Tunjukkan seseorang bisa melakukannya.', suspect: true },
-	motive: { label: 'Tetapkan Motif', group: 'evidence', hint: 'Tunjukkan mengapa seseorang melakukannya.', suspect: true },
-	identity: { label: 'Tetapkan Identitas', group: 'evidence', hint: 'Tunjukkan siapa yang ada di sana.', suspect: true },
-	authenticity: { label: 'Gugat Keaslian', group: 'evidence', hint: 'Bukti ini tidak seperti yang diklaim (palsu, dipotong, tanpa sumber).', target: true },
-	reliability: { label: 'Gugat Keandalan', group: 'evidence', hint: 'Bukti ini tak bisa dipegang. Kutip apa yang melemahkannya.', target: true },
-	contradiction: { label: 'Ungkap Kontradiksi', group: 'evidence', hint: 'Kutip dua hal yang tak mungkin sama-sama benar.', pair: true },
-	doubt: { label: 'Keraguan yang Wajar', group: 'rhetoric', hint: 'Tunjukkan lubang dalam dakwaan.' },
-	emotional: { label: 'Seruan Emosional', group: 'rhetoric', hint: 'Sentuh sisi kemanusiaan. Minim bukti.' },
-	reframe: { label: 'Tafsir Ulang', group: 'rhetoric', hint: 'Beri bacaan lain atas suatu bukti. Kutip buktinya, lalu pendukung tafsir Anda.', target: true },
-	credibility: { label: 'Serang Kredibilitas', group: 'rhetoric', hint: 'Lemahkan saksi. Kutip keterangannya.', target: true },
-	alternative: { label: 'Pelaku Lain', group: 'rhetoric', hint: 'Orang lain yang melakukannya.', suspect: true },
-	connect: { label: 'Hubungkan Bukti', group: 'rhetoric', hint: 'Tunjukkan dua bukti atau lebih mengarah ke orang yang sama.', suspect: true }
+	accuse: {
+		label: 'Tuduh',
+		key: '1',
+		hint: {
+			prosecution: 'Tunjukkan terdakwa pelakunya. Kutip bukti kesempatan, motif, identitas, atau kronologinya — dua bukti lebih kuat dari satu.',
+			defense: 'Tunjuk pelaku lain. Kutip bukti kesempatan, motif, identitas, atau kronologinya — dua bukti lebih kuat dari satu.'
+		},
+		example: 'kutip dua bukti yang menempatkan orang itu di lokasi → “Hanya dia yang punya akses malam itu.”',
+		suspect: true
+	},
+	challenge: {
+		label: 'Bantah',
+		key: '2',
+		hint: {
+			prosecution: 'Jatuhkan satu bukti atau keterangan lawan (kutipan pertama). Lalu kutip yang melemahkannya: bukti tandingan, keterangan saksi, catatan pengadilan.',
+			defense: 'Jatuhkan satu bukti atau keterangan yang memberatkan (kutipan pertama). Lalu kutip yang melemahkannya: bukti tandingan, keterangan saksi, catatan pengadilan.'
+		},
+		example: 'kutip video viral (sasaran) + rekaman utuhnya → “Video ini dipotong; versi utuhnya berkata lain.”',
+		target: true
+	},
+	contradiction: {
+		label: 'Ungkap Kontradiksi',
+		key: '3',
+		hint: {
+			prosecution: 'Kutip tepat dua hal yang tak mungkin sama-sama benar — biasanya soal waktu, tempat, atau orang yang sama.',
+			defense: 'Kutip tepat dua hal yang tak mungkin sama-sama benar — biasanya soal waktu, tempat, atau orang yang sama.'
+		},
+		example: 'kutip keterangan saksi + bukti yang membantahnya → “Saksi bilang tak ada yang masuk, padahal kuncinya dipinjam.”',
+		pair: true
+	},
+	doubt: {
+		label: 'Ragukan',
+		key: '4',
+		hint: {
+			prosecution: 'Tunjukkan lubang dalam cerita pembela. Kutip bukti yang sudah gugur atau kontradiksi yang sudah ditemukan.',
+			defense: 'Tunjukkan lubang dalam dakwaan. Kutip bukti yang sudah gugur atau kontradiksi yang sudah ditemukan.'
+		},
+		example: 'kutip bukti yang sudah dicoret → “Tanpa video itu, dakwaan runtuh.”'
+	}
 };
 
 export type Reaction =
@@ -153,7 +171,24 @@ export type PublicCase = {
 	timeline: { time: string; text: string }[];
 	/** Arahan singkat per pihak saat persiapan. */
 	goals: Record<Side, string>;
+	/** Perkara pendek bisa memakai langkah yang lebih sedikit. */
+	pace?: Partial<Pace>;
+	/** Ditandai sebagai perkara latihan di lobi. */
+	tutorial?: boolean;
 };
+
+export type Pace = { evidence: number; witness: number; cross: number; clarifications: number; closingSeconds: number };
+
+export function paceFor(c: Pick<PublicCase, 'pace'>): Pace {
+	return {
+		evidence: TURN_PHASES.evidence.actions,
+		witness: TURN_PHASES.witness.actions,
+		cross: TURN_PHASES.cross.actions,
+		clarifications: CLARIFICATIONS,
+		closingSeconds: CLOSING_SECONDS,
+		...c.pace
+	};
+}
 
 export function topicsFor(c: PublicCase): string[] {
 	return [...Object.keys(BASE_TOPICS), ...Object.keys(c.suspects)];

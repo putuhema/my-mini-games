@@ -1,9 +1,9 @@
 // Bentuk berkas perkara lengkap, termasuk yang hanya diketahui hakim. HANYA SERVER.
 
-import type { ArgType, EvidenceKind, PublicCase } from './rules';
+import type { EvidenceKind, PublicCase } from './rules';
 
 /** Klaim yang didukung sebuah fakta, mis. 'motive:bambang'. */
-export type Support = `${Extract<ArgType, 'timeline' | 'opportunity' | 'motive' | 'identity'>}:${string}`;
+export type Support = `${'timeline' | 'opportunity' | 'motive' | 'identity'}:${string}`;
 
 export type Fact = {
 	supports?: Support[];

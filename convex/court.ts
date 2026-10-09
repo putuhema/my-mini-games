@@ -6,13 +6,12 @@ import { courtVerdict } from './schema';
 import { CODE_CHARS, cleanName } from './rooms';
 import {
 	ARG_TYPES,
-	CLARIFICATIONS,
 	CLOSING_PARTS,
-	CLOSING_SECONDS,
 	isTurnPhase,
 	MAX_OPENING,
 	MAX_TEXT,
 	other,
+	paceFor,
 	SIDE_LABEL,
 	topicLabel,
 	topicsFor,
@@ -25,7 +24,7 @@ import {
 } from './court/rules';
 import type { CaseTools } from './court/case';
 import { CASES, caseFor, DEFAULT_CASE } from './court/cases';
-import { CLAIM_TYPES, describe, proves, rule, tally, type Board } from './court/judge';
+import { BLUFFABLE, CLAIM_TYPES, describe, proves, rule, tally, type Board } from './court/judge';
 
 type Room = Doc<'courtRooms'>;
 type Entry = Doc<'courtEntries'>;
@@ -72,13 +71,12 @@ function cleanText(text: string | undefined, max = MAX_TEXT) {
 	return (text ?? '').trim().slice(0, max);
 }
 
-function boardFor(room: Room, side: Side, appeals = 0): Board {
+function boardFor(room: Room, side: Side): Board {
 	return {
 		side,
 		onRecord: new Set(room.onRecord),
 		discredited: new Set(room.discredited.map((d) => d.fact)),
-		contradicted: new Set(room.contradictions.flatMap((c) => [c.a, c.b])),
-		appeals
+		contradicted: new Set(room.contradictions.flatMap((c) => [c.a, c.b]))
 	};
 }
 
@@ -153,17 +151,18 @@ class Session {
 		const order: Phase[] = ['evidence', 'witness', 'cross', 'closing'];
 		const next = order[order.indexOf(this.room.phase) + 1];
 		if (next === 'closing') {
-			const closingDeadline = Date.now() + CLOSING_SECONDS * 1000;
+			const seconds = paceFor(this.t.case.public).closingSeconds;
+			const closingDeadline = Date.now() + seconds * 1000;
 			Object.assign(this.patch, { phase: 'closing', turn: undefined, closingDeadline });
 			await this.entry({
 				side: 'court',
 				kind: 'note',
-				text: 'Majelis mempersilakan Jaksa membacakan tuntutan dan Penasihat Hukum membacakan pledoi. Waktu tiga menit.'
+				text: `Majelis mempersilakan Jaksa membacakan tuntutan dan Penasihat Hukum membacakan pledoi. Waktu ${Math.round(seconds / 60)} menit.`
 			});
 			await this.ctx.scheduler.runAt(closingDeadline, internal.court.closingTimeout, { roomId: this.room._id, trial: this.room.trial });
 		} else if (next && isTurnPhase(next)) {
-			const p = TURN_PHASES[next];
-			Object.assign(this.patch, { phase: next, turn: p.opens, budgets: { defense: p.actions, prosecution: p.actions } });
+			const n = paceFor(this.t.case.public)[next];
+			Object.assign(this.patch, { phase: next, turn: TURN_PHASES[next].opens, budgets: { defense: n, prosecution: n } });
 			const intro = {
 				witness: 'Sidang dilanjutkan dengan pemeriksaan saksi. Para pihak dipersilakan bertanya bergantian.',
 				cross: 'Pemeriksaan silang. Hadapkan saksi dengan alat bukti.'
@@ -188,7 +187,14 @@ async function open(ctx: MutationCtx, roomId: Id<'courtRooms'>, playerId: string
 export const cases = query({
 	args: {},
 	handler: async () =>
-		CASES.map((c) => ({ id: c.public.id, title: c.public.title, tagline: c.public.tagline, setting: c.public.setting, docket: c.public.docket }))
+		CASES.map((c) => ({
+			id: c.public.id,
+			title: c.public.title,
+			tagline: c.public.tagline,
+			setting: c.public.setting,
+			docket: c.public.docket,
+			tutorial: !!c.public.tutorial
+		}))
 });
 
 export const get = query({
@@ -326,7 +332,7 @@ export const create = mutation({
 			defenseId: playerId,
 			trial: 1,
 			budgets: { defense: 0, prosecution: 0 },
-			clarifications: { defense: CLARIFICATIONS, prosecution: CLARIFICATIONS },
+			clarifications: { defense: paceFor(t.case.public).clarifications, prosecution: paceFor(t.case.public).clarifications },
 			openings: {},
 			closings: {},
 			onRecord: publicIds(t),
@@ -363,7 +369,8 @@ export const chooseCase = mutation({
 		if (room.phase !== 'waiting' && room.phase !== 'briefing') throw new ConvexError('Sidang sudah berjalan');
 		if (room.openings.defense || room.openings.prosecution) throw new ConvexError('Pernyataan pembuka sudah masuk');
 		const t = caseFor(caseId);
-		await ctx.db.patch(roomId, { caseId: t.case.public.id, onRecord: publicIds(t) });
+		const n = paceFor(t.case.public).clarifications;
+		await ctx.db.patch(roomId, { caseId: t.case.public.id, onRecord: publicIds(t), clarifications: { defense: n, prosecution: n } });
 	}
 });
 
@@ -380,8 +387,8 @@ export const opening = mutation({
 		s.patch.openings = openings;
 		if (openings.defense && openings.prosecution) {
 			for (const who of ['prosecution', 'defense'] as Side[]) await s.entry({ side: who, kind: 'opening', text: openings[who] });
-			const p = TURN_PHASES.evidence;
-			Object.assign(s.patch, { phase: 'evidence', turn: p.opens, budgets: { defense: p.actions, prosecution: p.actions } });
+			const n = paceFor(s.t.case.public).evidence;
+			Object.assign(s.patch, { phase: 'evidence', turn: TURN_PHASES.evidence.opens, budgets: { defense: n, prosecution: n } });
 			await s.entry({ side: 'court', kind: 'note', text: 'Sidang dilanjutkan dengan pembuktian. Jaksa Penuntut dipersilakan.' });
 		}
 		await s.save();
@@ -444,9 +451,12 @@ export const argue = mutation({
 
 		// Mengutip berkas sendiri berarti mengajukannya.
 		s.record(...cites);
-		const log = await entries(ctx, room);
-		const appeals = log.filter((e) => e.side === side && e.argType === 'emotional').length;
-		const ruling = rule({ argType, suspect: args.suspect, cites }, { ...boardFor(room, side, appeals), onRecord: new Set(s.onRecord) }, s.t);
+		let ruling = rule({ argType, suspect: args.suspect, cites }, { ...boardFor(room, side), onRecord: new Set(s.onRecord) }, s.t);
+		// Dengan cadangan tersegel, klaim yang kalah di atas kertas menunggu diuji lawan.
+		const claim = CLAIM_TYPES.includes(argType);
+		if (claim && backing.length && BLUFFABLE.includes(ruling.reaction)) {
+			ruling = { reaction: 'unverified', text: 'Belum terbukti dari yang dikutip. Pihak lawan dapat menuntut buktinya.' };
+		}
 
 		const seq = await s.entry({
 			side,
@@ -459,7 +469,7 @@ export const argue = mutation({
 			targetSeq: args.targetSeq,
 			reaction: ruling.reaction,
 			ruling: ruling.text,
-			status: ruling.reaction === 'unverified' && CLAIM_TYPES.includes(argType) ? 'unverified' : undefined
+			status: ruling.reaction === 'unverified' && claim ? 'unverified' : undefined
 		});
 		if (ruling.discredit) s.discredit(ruling.discredit, side, seq);
 		if (ruling.contradiction) s.contradiction(ruling.contradiction, side, seq);
@@ -597,7 +607,8 @@ export const demandProof = mutation({
 		);
 		if (ok) {
 			s.record(...backing);
-			await ctx.db.patch(target._id, { status: 'proven', cites: [...target.cites, ...backing] });
+			await ctx.db.patch(target._id, { status: 'proven', cites: [...target.cites, ...backing], reaction: ok.reaction, ruling: ok.text });
+			if (ok.discredit) s.discredit(ok.discredit, other(side), targetSeq);
 			await s.entry({
 				side,
 				kind: 'objection',
@@ -730,13 +741,14 @@ export function fallbackVerdict(room: Room, log: Entry[]): Verdict {
 	const guilty = score.prosecution >= score.defense + 3;
 	const found = room.contradictions.length;
 	const struck = room.discredited.length;
-	const p = score.prosecution.toFixed(1);
-	const d = score.defense.toFixed(1);
 	const reasoning = guilty
-		? `Penuntut umum membangun dakwaan yang lebih kuat (${p} lawan ${d}). Pembela tidak menimbulkan keraguan yang dinilai wajar oleh majelis` +
+		? `Penuntut umum membangun dakwaan yang lebih kuat. Pembela tidak menimbulkan keraguan yang dinilai wajar oleh majelis` +
 			`${found ? `, meski ada ${found} kontradiksi di catatan sidang` : ''}.`
-		: `Penuntut umum tidak berhasil membuktikan dakwaan secara sah dan meyakinkan (${p} lawan ${d}). ` +
+		: `Penuntut umum tidak berhasil membuktikan dakwaan secara sah dan meyakinkan` +
+			`${score.prosecution > score.defense ? ': unggul, tetapi tidak cukup jauh untuk menghapus keraguan' : ''}. ` +
 			`${struck ? `${struck} alat bukti dicoret atau dinetralkan` : 'Bukti kunci tidak teruji'}${found ? ` dan ${found} kontradiksi ditemukan` : ''}.`;
+	// Poin mentah ke skala 0–100 yang sama dengan hakim AI.
+	const scale = (n: number) => Math.max(0, Math.min(100, Math.round(30 + n * 5)));
 
 	const closing = Object.values(room.closings.defense?.parts ?? {}).join(' ').toLowerCase();
 	const pointed = (suspect: string) => {
@@ -779,13 +791,13 @@ export function fallbackVerdict(room: Room, log: Entry[]): Verdict {
 		reasoning,
 		by: 'fallback',
 		defense: {
-			score: Math.round(score.defense * 10) / 10,
+			score: scale(score.defense),
 			strongest: describe(best.defense.e, t),
 			weakest: describe(worst.defense.e, t),
 			vsTruth: defenseVsTruth
 		},
 		prosecution: {
-			score: Math.round(score.prosecution * 10) / 10,
+			score: scale(score.prosecution),
 			strongest: describe(best.prosecution.e, t),
 			weakest: describe(worst.prosecution.e, t),
 			vsTruth: prosecutionVsTruth
@@ -862,7 +874,7 @@ export const again = mutation({
 			trial: room.trial + 1,
 			turn: undefined,
 			budgets: { defense: 0, prosecution: 0 },
-			clarifications: { defense: CLARIFICATIONS, prosecution: CLARIFICATIONS },
+			clarifications: { defense: paceFor(t.case.public).clarifications, prosecution: paceFor(t.case.public).clarifications },
 			openings: {},
 			closings: {},
 			closingDeadline: undefined,

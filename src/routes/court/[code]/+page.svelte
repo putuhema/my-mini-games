@@ -5,12 +5,12 @@
 	import { useMutation, useQuery } from 'convex-svelte';
 	import { api } from '../../../../convex/_generated/api';
 	import {
-		CLARIFICATIONS,
 		isTurnPhase,
 		MAX_OPENING,
+		paceFor,
 		PHASE_TITLE,
+		topicsFor,
 		SIDE_LABEL,
-		TURN_PHASES,
 		type ArgType,
 		type ClosingKey,
 		type Side
@@ -260,6 +260,25 @@
 	);
 	const accusedName = $derived(room ? (room.case.suspects[room.case.accused]?.name ?? '') : '');
 
+	// One line that always says what you can do right now.
+	const pace = $derived(room ? paceFor(room.case) : undefined);
+	const openClaims = $derived(
+		room && you ? room.entries.filter((e) => e.side !== 'court' && e.side !== you && e.status === 'unverified').map((e) => e.seq) : []
+	);
+	const guide = $derived.by(() => {
+		if (!room || !you || !live) return '';
+		if (!myTurn) {
+			return room.phase === 'witness'
+				? 'Sambil menunggu: baca jawaban saksi, kutip yang berguna (klik chipnya), tandai bukti dengan 7/8/9.'
+				: 'Sambil menunggu: susun kutipan dan argumen Anda di tab Argumen — kirim begitu giliran tiba.';
+		}
+		return {
+			evidence: 'Giliran Anda: ajukan bukti rahasia (P), Tuduh/Bantah di tab Argumen, atau mohon klarifikasi majelis (Q) untuk membuka catatan tersegel.',
+			witness: `Giliran Anda: tanya saksi di tab Saksi — pilih pertanyaan baku (1–${topicsFor(room.case).length}) atau tulis sendiri. Jawaban masuk berita acara dan bisa dikutip.`,
+			cross: 'Giliran Anda: hadapkan saksi dengan bukti di tab Saksi. Saksi yang terbentur bukti memicu kontradiksi — lalu Bantah keterangannya.'
+		}[room.phase as 'evidence' | 'witness' | 'cross'];
+	});
+
 	const phaseNumber = $derived(
 		room ? ({ briefing: 1, evidence: 2, witness: 3, cross: 4, closing: 5, deliberating: 6, verdict: 6, waiting: 0 } as const)[room.phase] : 0
 	);
@@ -364,6 +383,14 @@
 					<button class="btn small danger" disabled={!myTurn || busy} onclick={doRest}>Cukup <kbd>R</kbd></button>
 				{/if}
 			</div>
+			{#if guide}
+				<p class="guide" class:mine={myTurn}>
+					› {guide}
+					{#if openClaims.length}
+						<b>Klaim lawan {openClaims.map((n) => `#${n}`).join(', ')} belum terbukti — klik “Tuntut bukti” di berita acara bila Anda curiga gertakan.</b>
+					{/if}
+				</p>
+			{/if}
 
 			<div class="court">
 				<div class="main">
@@ -379,8 +406,8 @@
 							<p>{room.case.brief}</p>
 							<p class="dim">{room.case.goals[you]}</p>
 							<p class="dim">
-								Tiap pihak mendapat {TURN_PHASES.evidence.actions} aksi pembuktian, {TURN_PHASES.witness.actions} pertanyaan saksi, dan
-								{TURN_PHASES.cross.actions} langkah pemeriksaan silang, ditambah {CLARIFICATIONS} permohonan klarifikasi yang bisa membuka catatan tersegel.
+								Tiap pihak mendapat {pace?.evidence} aksi pembuktian, {pace?.witness} pertanyaan saksi, dan
+								{pace?.cross} langkah pemeriksaan silang, ditambah {pace?.clarifications} permohonan klarifikasi yang bisa membuka catatan tersegel.
 							</p>
 							{#if canPickCase}{@render casePicker()}{/if}
 							{#if done}
@@ -756,5 +783,19 @@
 	.case.sel {
 		outline: 2px solid var(--cursor);
 		outline-offset: 2px;
+	}
+	.guide {
+		margin: -4px 0 10px;
+		color: var(--ink-dim);
+		line-height: 1.05;
+	}
+	.guide.mine {
+		color: var(--ink-2);
+	}
+	.guide b {
+		display: block;
+		font-weight: 400;
+		color: var(--luck);
+		margin-top: 2px;
 	}
 </style>

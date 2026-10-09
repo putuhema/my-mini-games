@@ -1,6 +1,6 @@
-<!-- Build a structured argument: a type, who it's about, what it cites, and the words. -->
+<!-- Build an argument: one of four moves, who it's about, what it cites, and the words. -->
 <script lang="ts">
-	import { ARG_TYPES, type ArgType } from '../../../convex/court/rules';
+	import { ARG_TYPES, type ArgType, type Side } from '../../../convex/court/rules';
 	import { factName, factTitle, type Cite, type CourtView } from './types';
 
 	let {
@@ -25,12 +25,22 @@
 		onArgue: (arg: { argType: ArgType; suspect?: string; text: string }) => Promise<boolean>;
 	} = $props();
 
-	let argType = $state<ArgType>('identity');
+	let argType = $state<ArgType>('accuse');
 	let picked = $state<string>();
-	const suspect = $derived(picked && room.case.suspects[picked] ? picked : room.case.accused);
 	let text = $state('');
 
+	const you = $derived((room.you ?? 'defense') as Side);
+	// Jaksa menuduh terdakwa; pembela menunjuk orang lain.
+	const fallbackSuspect = $derived(
+		you === 'prosecution' ? room.case.accused : (Object.keys(room.case.suspects).find((id) => id !== room.case.accused) ?? room.case.accused)
+	);
+	const suspect = $derived(picked && room.case.suspects[picked] ? picked : fallbackSuspect);
+	const suspects = $derived(
+		Object.entries(room.case.suspects).filter(([id]) => (you === 'prosecution' ? id === room.case.accused : id !== room.case.accused))
+	);
+
 	const meta = $derived(ARG_TYPES[argType]);
+	const moves = Object.entries(ARG_TYPES) as [ArgType, (typeof ARG_TYPES)[ArgType]][];
 	const allowed = $derived(room.phase === 'evidence' || room.phase === 'cross');
 	const sealable = (key: string) => {
 		const ev = room.evidence.find((e) => e.id === key);
@@ -39,58 +49,62 @@
 	const publicCites = $derived(basket.filter((c) => !c.sealed));
 	const problem = $derived.by(() => {
 		if (meta.pair && publicCites.length !== 2) return 'Kutip tepat dua butir (tidak tersegel).';
-		if (meta.target && !publicCites.length) return 'Kutip dulu butir yang Anda serang.';
+		if (meta.target && !publicCites.length) return 'Kutip dulu butir yang Anda bantah.';
 		if (text.trim().length < 8) return 'Sampaikan argumen Anda dalam satu-dua kalimat.';
 		return '';
 	});
-
-	const evidenceTypes = Object.entries(ARG_TYPES).filter(([, m]) => m.group === 'evidence') as [ArgType, (typeof ARG_TYPES)[ArgType]][];
-	const rhetoricTypes = Object.entries(ARG_TYPES).filter(([, m]) => m.group === 'rhetoric') as [ArgType, (typeof ARG_TYPES)[ArgType]][];
+	const slotLabel = (i: number) => (meta.pair ? ['A', 'B'][i] ?? '+' : meta.target ? (i === 0 ? 'SASARAN' : 'DASAR') : String(i + 1));
 
 	async function submit(e: Event) {
 		e.preventDefault();
-		if (problem || busy) return;
+		if (problem || busy || !myTurn) return;
 		const ok = await onArgue({ argType, suspect: meta.suspect ? suspect : undefined, text: text.trim() });
 		if (ok) text = '';
 	}
+
+	function onKey(e: KeyboardEvent) {
+		if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && document.activeElement?.closest('.composer')) return submit(e);
+		if (e.metaKey || e.ctrlKey || e.altKey || (e.target as HTMLElement).closest?.('input, textarea, select')) return;
+		const move = moves.find(([, m]) => m.key === e.key);
+		if (move) argType = move[0];
+	}
 </script>
+
+<svelte:window onkeydown={onKey} />
 
 <form class="composer" onsubmit={submit}>
 	{#if !allowed}
 		<p class="micro">Argumen diajukan di babak pembuktian dan pemeriksaan silang.</p>
 	{/if}
 
-	<div class="types">
-		<span class="eyebrow">Argumen pembuktian</span>
-		<div class="chips">
-			{#each evidenceTypes as [key, m] (key)}
-				<button type="button" class="chip" class:sel={argType === key} onclick={() => (argType = key)}>{m.label}</button>
-			{/each}
-		</div>
-		<span class="eyebrow">Argumen retorika</span>
-		<div class="chips">
-			{#each rhetoricTypes as [key, m] (key)}
-				<button type="button" class="chip" class:sel={argType === key} onclick={() => (argType = key)}>{m.label}</button>
-			{/each}
-		</div>
-		<p class="hint">› {meta.hint}</p>
+	<div class="moves" role="radiogroup" aria-label="Langkah">
+		{#each moves as [key, m] (key)}
+			<button type="button" role="radio" aria-checked={argType === key} class="move" class:sel={argType === key} onclick={() => (argType = key)}>
+				<kbd>{m.key}</kbd>
+				<strong>{m.label}</strong>
+			</button>
+		{/each}
+	</div>
+	<div class="explain">
+		<p class="hint">› {meta.hint[you]}</p>
+		<p class="example micro">Contoh: {meta.example}</p>
 	</div>
 
 	{#if meta.suspect}
 		<div class="row">
-			<span class="eyebrow">Tentang</span>
-			{#each Object.entries(room.case.suspects) as [id, s] (id)}
+			<span class="eyebrow">{you === 'prosecution' ? 'Terdakwa' : 'Pelaku lain'}</span>
+			{#each suspects as [id, s] (id)}
 				<button type="button" class="chip" class:sel={suspect === id} onclick={() => (picked = id)}>{s.name}</button>
 			{/each}
 		</div>
 	{/if}
 
 	<div class="cites">
-		<span class="eyebrow">Kutipan {#if meta.target}<b>· pertama = sasaran</b>{/if}</span>
+		<span class="eyebrow">Kutipan</span>
 		<div class="slots">
 			{#each basket as c, i (c.key)}
 				<div class="cite" class:sealed={c.sealed}>
-					<span class="n">{i + 1}</span>
+					<span class="n">{slotLabel(i)}</span>
 					<span class="k" title={factTitle(c.key, room.evidence, room.case)}>{factName(c.key, room.case)}</span>
 					{#if sealable(c.key)}
 						<button type="button" class="mini" title="Dasar tersegel tetap tersembunyi kecuali lawan menuntut bukti" onclick={() => onToggleSeal(c.key)}>
@@ -100,11 +114,14 @@
 					<button type="button" class="mini" aria-label="Hapus" onclick={() => onRemove(c.key)}>×</button>
 				</div>
 			{/each}
-			{#each Array(Math.max(0, 3 - basket.length)) as _, i (i)}
-				<div class="cite slot"><span class="micro">kosong</span></div>
+			{#each Array(Math.max(0, 2 - basket.length)) as _, i (i)}
+				<div class="cite slot"><span class="n">{slotLabel(basket.length + i)}</span><span class="micro">kosong</span></div>
 			{/each}
 		</div>
-		<p class="micro">Tekan <kbd>C</kbd> pada butir atau klik chip di berita acara untuk mengutip. Mengutip bukti rahasia Anda berarti mengajukannya — atau segel sebagai dasar tersembunyi dan menggertak.</p>
+		<p class="micro">
+			Tekan <kbd>C</kbd> pada bukti, atau klik chip di berita acara, untuk mengutip. Bukti rahasia yang dikutip ikut diajukan — atau
+			<b>segel</b> sebagai dasar tersembunyi dan menggertak.
+		</p>
 	</div>
 
 	{#if targetSeq !== undefined}
@@ -114,18 +131,12 @@
 	<textarea bind:value={text} maxlength="600" placeholder="Yang Mulia, …" disabled={!allowed}></textarea>
 
 	<div class="send">
-		<span class="micro problem">{allowed && myTurn ? problem : ''}</span>
+		<span class="micro problem">{allowed ? (myTurn ? problem : 'Siapkan sekarang — kirim saat giliran Anda.') : ''}</span>
 		<button class="btn primary" disabled={!allowed || !myTurn || busy || !!problem}>
-			{myTurn ? 'Ajukan' : 'Tunggu giliran'} <kbd>⌘↵</kbd>
+			{myTurn ? meta.label : 'Tunggu giliran'} <kbd>⌘↵</kbd>
 		</button>
 	</div>
 </form>
-
-<svelte:window
-	onkeydown={(e) => {
-		if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && document.activeElement?.closest('.composer')) submit(e);
-	}}
-/>
 
 <style>
 	.composer {
@@ -133,12 +144,6 @@
 		flex-direction: column;
 		gap: 12px;
 	}
-	.types {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-	.chips,
 	.row {
 		display: flex;
 		flex-wrap: wrap;
@@ -230,5 +235,47 @@
 	}
 	.problem {
 		color: var(--olive);
+	}
+	.moves {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 6px;
+	}
+	.move {
+		all: unset;
+		box-sizing: border-box;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 10px;
+		border: 2px solid var(--rule-hi);
+		background: var(--void);
+		font-family: var(--font-ui);
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		color: var(--ink-2);
+	}
+	.move:hover {
+		color: var(--ink);
+	}
+	.move:focus-visible,
+	.move.sel {
+		outline: 2px solid var(--cursor);
+		outline-offset: 2px;
+		color: var(--ink);
+	}
+	.explain {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+	.example {
+		color: var(--ink-ghost);
+	}
+	@media (max-width: 720px) {
+		.moves {
+			grid-template-columns: 1fr 1fr;
+		}
 	}
 </style>

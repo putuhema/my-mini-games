@@ -103,9 +103,7 @@
 						{#if canObject(e)}
 							<button class="btn small danger" onclick={() => onDemandProof(e.seq)}>Tuntut bukti</button>
 						{/if}
-						{#if room.turn === room.you}
-							<button class="btn small" onclick={() => onRespond(e.seq)}>Tanggapi</button>
-						{/if}
+						<button class="btn small" onclick={() => onRespond(e.seq)}>Tanggapi</button>
 					</div>
 				{/if}
 			</li>

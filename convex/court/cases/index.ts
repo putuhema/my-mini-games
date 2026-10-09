@@ -1,11 +1,13 @@
 // Daftar perkara. Tambah perkara baru dengan satu berkas di folder ini. HANYA SERVER.
 
 import { tools, type CaseTools } from '../case';
+import { amal } from './amal';
 import { bansos } from './bansos';
 import { berlian } from './berlian';
 import { lahan } from './lahan';
 
-export const CASES = [berlian, bansos, lahan];
+// Perkara latihan lebih dulu: lobi memilihnya untuk pemain baru.
+export const CASES = [amal, berlian, bansos, lahan];
 export const DEFAULT_CASE = berlian.public.id;
 
 const cache = new Map<string, CaseTools>();

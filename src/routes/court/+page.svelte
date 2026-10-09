@@ -67,7 +67,9 @@
 		<section class="cases" aria-label="Pilih perkara">
 			{#each list as c, i (c.id)}
 				<button class="case panel" class:sel={chosen?.id === c.id} aria-pressed={chosen?.id === c.id} onclick={() => (picked = c.id)}>
-					<span class="micro">PERKARA {String(i + 1).padStart(2, '0')} · {c.setting}</span>
+					<span class="micro">
+						{#if c.tutorial}<b class="badge">MULAI DI SINI · LATIHAN</b>{:else}PERKARA {String(i).padStart(2, '0')}{/if} · {c.setting}
+					</span>
 					<strong>{c.title}</strong>
 					<span class="tagline">{c.tagline}</span>
 				</button>
@@ -307,5 +309,9 @@
 	.case.sel {
 		outline: 2px solid var(--cursor);
 		outline-offset: 2px;
+	}
+	.badge {
+		color: var(--exp);
+		font-weight: 400;
 	}
 </style>

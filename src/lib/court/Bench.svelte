@@ -1,6 +1,6 @@
 <!-- The top row: Defense, Judge, Prosecution. -->
 <script lang="ts">
-	import { CLARIFICATIONS, isTurnPhase, PHASE_TITLE, REACTION_META, SIDE_LABEL, type Reaction, type Side } from '../../../convex/court/rules';
+	import { isTurnPhase, paceFor, PHASE_TITLE, REACTION_META, SIDE_LABEL, type Reaction, type Side } from '../../../convex/court/rules';
 	import Portrait from './Portrait.svelte';
 	import type { CourtView } from './types';
 
@@ -45,7 +45,7 @@
 				{#if live}
 					<div class="meters micro">
 						<span title="Sisa aksi babak ini">AKSI {String(room.budgets[seat]).padStart(2, '0')}</span>
-						<span title="Sisa permohonan klarifikasi">KLAR {room.clarifications[seat]}/{CLARIFICATIONS}</span>
+						<span title="Sisa permohonan klarifikasi">KLAR {room.clarifications[seat]}/{paceFor(room.case).clarifications}</span>
 					</div>
 				{/if}
 			</div>
