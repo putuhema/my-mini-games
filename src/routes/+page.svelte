@@ -3,6 +3,7 @@
 	import {
 		BombIcon,
 		CatIcon,
+		GavelIcon,
 		HamburgerIcon,
 		PaintBrushIcon,
 		QuestionIcon,
@@ -41,6 +42,14 @@
 			color: 'pink',
 			title: 'Our Little Creature',
 			blurb: 'Raise one little pixel cat together, even when you are apart. It remembers everything.',
+			ready: true
+		},
+		{
+			href: '/court',
+			icon: GavelIcon,
+			color: 'purple',
+			title: 'Ruang Sidang',
+			blurb: 'Satu membela, satu menuntut, masing-masing dengan bukti rahasia. Hakim AI memutus siapa yang berargumen lebih baik.',
 			ready: true
 		},
 	];

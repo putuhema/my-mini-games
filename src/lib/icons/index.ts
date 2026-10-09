@@ -65,6 +65,7 @@ import ClockIcon from 'phosphor-svelte/lib/ClockIcon';
 import HourglassIcon from 'phosphor-svelte/lib/HourglassIcon';
 import StorefrontIcon from 'phosphor-svelte/lib/StorefrontIcon';
 import CatIcon from 'phosphor-svelte/lib/CatIcon';
+import GavelIcon from 'phosphor-svelte/lib/GavelIcon';
 import SnakeIcon from './SnakeIcon.svelte';
 
 export type IconProps = ComponentProps<typeof HeartIcon>;
@@ -72,6 +73,7 @@ export type Icon = Component<IconProps>;
 
 export {
 	CatIcon,
+	GavelIcon,
 	CashRegisterIcon,
 	CookingPotIcon,
 	HamburgerIcon,

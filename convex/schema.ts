@@ -135,6 +135,43 @@ const creatureNeeds = v.object({
 	cleanliness: v.number()
 });
 
+/** Courtroom: see convex/court.ts. */
+export const courtSide = v.union(v.literal('defense'), v.literal('prosecution'));
+
+export const courtClosing = v.object({
+	/** theory, opponent, uncertain, why (CLOSING_PARTS in convex/court/rules.ts). */
+	parts: v.record(v.string(), v.string()),
+	/** The key evidence the side leans on. */
+	cites: v.array(v.string()),
+	at: v.number()
+});
+
+const courtSideVerdict = v.object({
+	score: v.number(),
+	strongest: v.string(),
+	weakest: v.string(),
+	/** How the side's theory compares with what really happened. */
+	vsTruth: v.string()
+});
+
+export const courtVerdict = v.object({
+	verdict: v.union(v.literal('guilty'), v.literal('not_guilty')),
+	reasoning: v.string(),
+	by: v.union(v.literal('ai'), v.literal('fallback')),
+	defense: courtSideVerdict,
+	prosecution: courtSideVerdict,
+	keyEvidence: v.array(v.object({ id: v.string(), why: v.string() })),
+	/** The judge's call on each unproven claim: a lie, an interpretation, a mistake, or supported. */
+	claims: v.array(
+		v.object({
+			seq: v.number(),
+			call: v.union(v.literal('supported'), v.literal('interpretation'), v.literal('mistake'), v.literal('lie')),
+			note: v.string()
+		})
+	),
+	unresolved: v.array(v.string())
+});
+
 export default defineSchema({
 	rooms: defineTable({
 		code: v.string(),
@@ -417,6 +454,88 @@ export default defineSchema({
 		votes: v.array(v.object({ playerId: v.string(), choice: v.string() })),
 		result: v.optional(v.object({ choice: v.string(), agreed: v.boolean(), text: v.string() }))
 	}).index('by_coupleId_and_day', ['coupleId', 'day']),
+
+	/** Courtroom: Defense vs Prosecution before an AI judge. See convex/court.ts. */
+	courtRooms: defineTable({
+		code: v.string(),
+		/** Which case file is on trial (convex/court/cases). */
+		caseId: v.optional(v.string()),
+		phase: v.union(
+			v.literal('waiting'),
+			v.literal('briefing'),
+			v.literal('evidence'),
+			v.literal('witness'),
+			v.literal('cross'),
+			v.literal('closing'),
+			v.literal('deliberating'),
+			v.literal('verdict')
+		),
+		players: v.array(v.object({ id: v.string(), name: v.string() })),
+		defenseId: v.string(),
+		/** Bumped by Play Again; entries belong to one trial. */
+		trial: v.number(),
+		turn: v.optional(courtSide),
+		/** Actions left in the current phase. */
+		budgets: v.object({ defense: v.number(), prosecution: v.number() }),
+		clarifications: v.object({ defense: v.number(), prosecution: v.number() }),
+		/** Opening statements and closings stay sealed until both sides are in. */
+		openings: v.object({ defense: v.optional(v.string()), prosecution: v.optional(v.string()) }),
+		closings: v.object({ defense: v.optional(courtClosing), prosecution: v.optional(courtClosing) }),
+		closingDeadline: v.optional(v.number()),
+		/** Evidence ids and testimony keys (e.g. 'dana.contact') both sides can see and cite. */
+		onRecord: v.array(v.string()),
+		discredited: v.array(v.object({ fact: v.string(), side: courtSide, seq: v.number() })),
+		contradictions: v.array(
+			v.object({ a: v.string(), b: v.string(), text: v.string(), side: courtSide, seq: v.number() })
+		),
+		seq: v.number(),
+		verdict: v.optional(courtVerdict),
+		history: v.array(
+			v.object({
+				trial: v.number(),
+				caseTitle: v.optional(v.string()),
+				defenseName: v.string(),
+				prosecutionName: v.string(),
+				verdict: v.union(v.literal('guilty'), v.literal('not_guilty'))
+			})
+		)
+	}).index('by_code', ['code']),
+
+	/** Everything said in court, in order. `backing` is sealed from the opponent. */
+	courtEntries: defineTable({
+		roomId: v.id('courtRooms'),
+		trial: v.number(),
+		seq: v.number(),
+		phase: v.string(),
+		side: v.union(courtSide, v.literal('court')),
+		kind: v.union(
+			v.literal('opening'),
+			v.literal('present'),
+			v.literal('argue'),
+			v.literal('clarify'),
+			v.literal('ask'),
+			v.literal('confront'),
+			v.literal('objection'),
+			v.literal('rest'),
+			v.literal('closing'),
+			v.literal('note')
+		),
+		argType: v.optional(v.string()),
+		suspect: v.optional(v.string()),
+		text: v.optional(v.string()),
+		cites: v.array(v.string()),
+		/** Private evidence a side claims to hold without showing it. Revealed on Demand Proof. */
+		backing: v.optional(v.array(v.string())),
+		witness: v.optional(v.string()),
+		topic: v.optional(v.string()),
+		answer: v.optional(v.string()),
+		/** A free question waiting for the witness to answer. */
+		pending: v.optional(v.boolean()),
+		targetSeq: v.optional(v.number()),
+		reaction: v.optional(v.string()),
+		ruling: v.optional(v.string()),
+		status: v.optional(v.union(v.literal('unverified'), v.literal('proven'), v.literal('exposed')))
+	}).index('by_roomId_and_trial', ['roomId', 'trial']),
 
 	/** Web Push subscriptions, one per device, for turn reminders. */
 	pushSubscriptions: defineTable({
