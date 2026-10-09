@@ -9,9 +9,9 @@ export const DIFFICULTIES: Record<
 	Difficulty,
 	{ label: string; modules: number; seconds: number; detail: string }
 > = {
-	easy: { label: 'Rookie', modules: 3, seconds: 300, detail: '3 modules · 5:00' },
-	normal: { label: 'Agent', modules: 4, seconds: 300, detail: '4 modules · 5:00' },
-	hard: { label: 'Expert', modules: 6, seconds: 360, detail: '6 modules · 6:00' }
+	easy: { label: 'Pemula', modules: 3, seconds: 300, detail: '3 modul · 5:00' },
+	normal: { label: 'Agen', modules: 4, seconds: 300, detail: '4 modul · 5:00' },
+	hard: { label: 'Ahli', modules: 6, seconds: 360, detail: '6 modul · 6:00' }
 };
 
 export const MAX_STRIKES = 3;
@@ -163,39 +163,40 @@ export function wireToCut(wires: string[], e: Edgework, manual: Manual) {
 	return table.fallback - 1;
 }
 
-const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth'];
+const ORDINALS = ['1', '2', '3', '4', '5', '6'];
+const COLORS: Record<string, string> = { red: 'merah', blue: 'biru', yellow: 'kuning', white: 'putih', black: 'hitam', green: 'hijau' };
 
 export function describeWireCond(c: WireCond) {
 	switch (c.kind) {
 		case 'none':
-			return `there are no ${c.color} wires`;
+			return `tidak ada kabel ${COLORS[c.color]} yang terpasang`;
 		case 'many':
-			return `there is more than one ${c.color} wire`;
+			return `ada lebih dari satu kabel ${COLORS[c.color]}`;
 		case 'one':
-			return `there is exactly one ${c.color} wire`;
+			return `hanya ada satu kabel ${COLORS[c.color]}`;
 		case 'last':
-			return `the last wire is ${c.color}`;
+			return `kabel terakhir berwarna ${COLORS[c.color]}`;
 		case 'first':
-			return `the first wire is ${c.color}`;
+			return `kabel pertama berwarna ${COLORS[c.color]}`;
 		case 'odd':
-			return 'the last digit of the serial number is odd';
+			return 'angka terakhir nomor seri adalah ganjil';
 		case 'batteries':
-			return `there are ${c.n} or more batteries`;
+			return `jumlah baterai ${c.n} atau lebih`;
 		case 'lit':
-			return `there is a lit indicator labelled ${c.label}`;
+			return `indikator berlabel ${c.label} menyala`;
 	}
 }
 
 export function describeWireAction(a: WireAction) {
 	switch (a.kind) {
 		case 'pos':
-			return `cut the ${ORDINALS[a.n - 1]} wire`;
+			return `potong kabel ke-${ORDINALS[a.n - 1]}`;
 		case 'last':
-			return 'cut the last wire';
+			return 'potong kabel terakhir';
 		case 'firstOf':
-			return `cut the first ${a.color} wire`;
+			return `potong kabel ${COLORS[a.color]} yang pertama`;
 		case 'lastOf':
-			return `cut the last ${a.color} wire`;
+			return `potong kabel ${COLORS[a.color]} yang terakhir`;
 	}
 }
 
@@ -272,15 +273,15 @@ export function buttonAction(color: string, label: string, e: Edgework, manual: 
 export function describeButtonCond(c: ButtonCond) {
 	switch (c.kind) {
 		case 'color':
-			return `the button is ${c.color}`;
+			return `tombol berwarna ${COLORS[c.color]}`;
 		case 'label':
-			return `the button says "${c.label}"`;
+			return `tombol bertuliskan "${c.label}"`;
 		case 'colorLabel':
-			return `the button is ${c.color} and says "${c.label}"`;
+			return `tombol berwarna ${COLORS[c.color]} dan bertuliskan "${c.label}"`;
 		case 'batteries':
-			return `there are more than ${c.n} ${c.n === 1 ? 'battery' : 'batteries'}`;
+			return `jumlah baterai lebih dari ${c.n}`;
 		case 'lit':
-			return `there is a lit indicator labelled ${c.label}`;
+			return `indikator berlabel ${c.label} menyala`;
 	}
 }
 

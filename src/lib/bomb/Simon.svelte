@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { SIMON_COLORS } from '../../../convex/bomb';
 	import { sfx } from '#lib/sound.svelte.ts';
+	const COLOR_NAMES: Record<string, string> = { red: 'merah', blue: 'biru', green: 'hijau', yellow: 'kuning' };
 
 	let {
 		sequence,
@@ -61,7 +62,7 @@
 			class="pad {color}"
 			class:lit={lit === color}
 			{disabled}
-			aria-label="{color} pad"
+			aria-label="Tombol {COLOR_NAMES[color]}"
 			onclick={() => press(color)}
 		></button>
 	{/each}

@@ -137,18 +137,18 @@
 </script>
 
 <svelte:head>
-	<title>{room?.status === 'live' && iDefuse ? `${formatTimer(msLeft)} · ` : ''}Bomb Defusal · Us, Apart</title>
+	<title>{room?.status === 'live' && iDefuse ? `${formatTimer(msLeft)} · ` : ''}Jinakkan Bom · Us, Apart</title>
 </svelte:head>
 
 <main class:wide={room?.status === 'live' || postMortem}>
 	<nav class="topbar">
-		<a class="close" href="/bomb-defusal" aria-label="Leave game"><XIcon weight="bold" size="1.5rem" /></a>
+		<a class="close" href="/bomb-defusal" aria-label="Keluar dari permainan"><XIcon weight="bold" size="1.5rem" /></a>
 		<div class="tools">
 			<button
 				class="icon-btn"
 				onclick={toggleMute}
-				aria-label={sound.muted ? 'Turn sound on' : 'Mute sound'}
-				title={sound.muted ? 'Sound off' : 'Sound on'}
+				aria-label={sound.muted ? 'Nyalakan suara' : 'Matikan suara'}
+				title={sound.muted ? 'Suara mati' : 'Suara aktif'}
 			>
 				{#if sound.muted}
 					<SpeakerSlashIcon weight="fill" size="1.5rem" />
@@ -157,22 +157,22 @@
 				{/if}
 			</button>
 			{#if room}
-				<button class="code" onclick={copyInvite} title="Copy invite link">
-					{copied ? 'COPIED' : room.code}
+				<button class="code" onclick={copyInvite} title="Salin tautan undangan">
+					{copied ? 'TERSALIN' : room.code}
 				</button>
 			{/if}
 		</div>
 	</nav>
 
 	{#if roomQuery.isLoading}
-		<p class="center muted">Loading room…</p>
+		<p class="center muted">Memuat ruang…</p>
 	{:else if !room}
 		<Card class="narrow">
 			<div class="stack center">
 				<span class="big" style="--c: var(--blue)"><MagnifyingGlassIcon weight="fill" /></span>
-				<h2>Room not found</h2>
-				<p class="muted">Double-check the code <strong>{code}</strong> with your partner.</p>
-				<Button href="/bomb-defusal" full>Back</Button>
+				<h2>Ruang tidak ditemukan</h2>
+				<p class="muted">Periksa kembali kode <strong>{code}</strong> bersama pasanganmu.</p>
+				<Button href="/bomb-defusal" full>Kembali</Button>
 			</div>
 		</Card>
 	{:else if !isMember}
@@ -180,9 +180,9 @@
 			<Card class="narrow">
 				<div class="stack center">
 					<span class="big" style="--c: var(--orange)"><DoorOpenIcon weight="fill" /></span>
-					<h2>This room is full</h2>
-					<p class="muted">Two players are already in room {room.code}.</p>
-					<Button href="/bomb-defusal" full>Start your own</Button>
+					<h2>Ruang ini sudah penuh</h2>
+					<p class="muted">Sudah ada dua pemain di ruang {room.code}.</p>
+					<Button href="/bomb-defusal" full>Buat ruang sendiri</Button>
 				</div>
 			</Card>
 		{:else}
@@ -196,11 +196,11 @@
 					}}
 				>
 					<span class="big" style="--c: var(--red)"><BombIcon weight="fill" /></span>
-					<h2>{room.players[0]?.name} needs a bomb expert</h2>
-					<label class="label" for="name">Your name</label>
+					<h2>{room.players[0]?.name} membutuhkan ahli bom</h2>
+					<label class="label" for="name">Namamu</label>
 					<input id="name" bind:value={name} maxlength="24" autocomplete="nickname" />
 					<Button type="submit" size="lg" variant="danger" full disabled={busy || !name.trim()}>
-						Join the squad
+						Gabung tim
 					</Button>
 					{#if error}<p class="error">{error}</p>{/if}
 				</form>
@@ -210,32 +210,32 @@
 		<Card class="narrow">
 			<div class="stack center">
 				<span class="big" style="--c: var(--pink)"><EnvelopeSimpleOpenIcon weight="fill" /></span>
-				<h2>Invite your partner</h2>
+				<h2>Undang pasanganmu</h2>
 				<p class="muted">
-					Send them the code <strong class="mono">{room.code}</strong>. You'll pick roles once they join.
+					Kirim kode <strong class="mono">{room.code}</strong>. Kalian bisa memilih peran setelah pasanganmu bergabung.
 				</p>
 				<Button variant="secondary" size="lg" full onclick={copyInvite}>
-					{copied ? 'Link copied' : 'Copy invite link'}
+					{copied ? 'Tautan tersalin' : 'Salin tautan undangan'}
 				</Button>
 			</div>
 		</Card>
 	{:else if room.status === 'briefing'}
 		<div class="briefing">
-			<h1>Round {room.round + 1} briefing</h1>
+			<h1>Persiapan ronde {room.round + 1}</h1>
 
 			<div class="roles">
 				<Card tone="red" class="role">
 					<span class="role-icon"><BombIcon weight="fill" size="2rem" /></span>
 					<div>
-						<span class="label">Defuser</span>
-						<strong>{defuser?.id === me.id ? 'You' : defuser?.name}</strong>
-						<p>Sees the bomb, can't see the manual. Describe everything.</p>
+						<span class="label">Penjinak</span>
+						<strong>{defuser?.id === me.id ? 'Kamu' : defuser?.name}</strong>
+						<p>Melihat bom, tetapi tidak bisa melihat panduan. Jelaskan semua yang kamu lihat.</p>
 					</div>
 				</Card>
 				<button
 					class="swap"
-					aria-label="Swap roles"
-					title="Swap roles"
+					aria-label="Tukar peran"
+					title="Tukar peran"
 					disabled={busy}
 					onclick={() => run(() => configure({ roomId: room._id, playerId: me.id, swap: true }))}
 				>
@@ -244,15 +244,15 @@
 				<Card tone="orange" class="role">
 					<span class="role-icon"><BookOpenIcon weight="fill" size="2rem" /></span>
 					<div>
-						<span class="label">Expert</span>
-						<strong>{expert?.id === me.id ? 'You' : expert?.name}</strong>
-						<p>Has the manual, can't see the bomb. Ask the right questions.</p>
+						<span class="label">Pemandu</span>
+						<strong>{expert?.id === me.id ? 'Kamu' : expert?.name}</strong>
+						<p>Memegang panduan, tetapi tidak bisa melihat bom. Ajukan pertanyaan yang tepat.</p>
 					</div>
 				</Card>
 			</div>
 
-			<span class="label">Difficulty</span>
-			<div class="levels" role="radiogroup" aria-label="Difficulty">
+			<span class="label">Tingkat kesulitan</span>
+			<div class="levels" role="radiogroup" aria-label="Tingkat kesulitan">
 				{#each Object.entries(DIFFICULTIES) as [key, d] (key)}
 					<ChoiceTile
 						class="level"
@@ -271,7 +271,7 @@
 
 			<p class="tip">
 				<HeadsetIcon weight="fill" size="1.4rem" />
-				Start your call first — you'll be talking the whole time.
+			Mulai panggilan dulu — kalian akan terus berkomunikasi selama permainan.
 			</p>
 
 			<Button
@@ -281,7 +281,7 @@
 				disabled={busy}
 				onclick={() => run(() => startRound({ roomId: room._id, playerId: me.id }))}
 			>
-				Arm the bomb
+				Aktifkan bom
 			</Button>
 			{#if error}<p class="error">{error}</p>{/if}
 
@@ -290,7 +290,7 @@
 	{:else if room.status === 'live'}
 		{#if iDefuse && room.bomb}
 			<p class="hint">
-				<BombIcon weight="fill" size="1.2rem" /> Describe what you see. {expert?.name} has the manual.
+				<BombIcon weight="fill" size="1.2rem" /> Jelaskan apa yang kamu lihat. {expert?.name} memegang panduan.
 			</p>
 			<Bomb
 				bomb={room.bomb}
@@ -304,7 +304,7 @@
 			<div class="expert-col">
 				<p class="hint live">
 					<span class="pulse" aria-hidden="true"></span>
-					Bomb is live. {defuser?.name} is holding it — you can't see it. Ask!
+					Bom sudah aktif. {defuser?.name} yang memegangnya — kamu tidak bisa melihatnya. Tanyakan apa yang perlu kamu ketahui!
 				</p>
 				<Manual {manual} />
 			</div>
@@ -325,13 +325,13 @@
 					<span class="big result-icon" style="--c: var(--{boom ? 'red' : 'green'})">
 						{#if boom}<BombIcon weight="fill" />{:else}<SealCheckIcon weight="fill" />{/if}
 					</span>
-					<h2>{boom ? 'BOOM.' : 'Bomb defused!'}</h2>
+					<h2>{boom ? 'DUAR.' : 'Bom berhasil dijinakkan!'}</h2>
 					<p>
 						{#if boom}
-							{room.cause === 'strikes' ? `${MAX_STRIKES} strikes — the bomb had enough.` : 'The timer hit 0:00.'}
+							{room.cause === 'strikes' ? `${MAX_STRIKES} kesalahan — bomnya keburu meledak.` : 'Waktunya habis.'}
 						{:else}
-							With <strong>{formatTimer(msLeft)}</strong> to spare and {room.strikes} strike{room.strikes === 1 ? '' : 's'}.
-							{defuser?.name} &amp; {expert?.name}, nerves of steel.
+							Berhasil dengan sisa waktu <strong>{formatTimer(msLeft)}</strong> dan {room.strikes} kesalahan.
+							{defuser?.name} &amp; {expert?.name}, kerja sama kalian luar biasa!
 						{/if}
 					</p>
 					<Button
@@ -341,10 +341,10 @@
 						disabled={busy}
 						onclick={() => run(() => playAgain({ roomId: room._id, playerId: me.id }))}
 					>
-						Next round · swap roles
+						Ronde berikutnya · tukar peran
 					</Button>
 					<Button variant="ghost" full onclick={() => (postMortem = !postMortem)}>
-						{postMortem ? 'Hide the bomb & manual' : 'See the bomb & manual'}
+						{postMortem ? 'Sembunyikan bom & panduan' : 'Lihat bom & panduan'}
 					</Button>
 				</div>
 			</Card>
@@ -377,13 +377,13 @@
 {#snippet history()}
 	{#if room?.history.length}
 		<section class="history">
-			<h3>Mission log</h3>
+			<h3>Riwayat permainan</h3>
 			<ul>
 				{#each room.history as h (h.round)}
 					<li>
-						<Badge color={h.defused ? 'green' : 'red'} solid>{h.defused ? 'Defused' : 'Boom'}</Badge>
+						<Badge color={h.defused ? 'green' : 'red'} solid>{h.defused ? 'Dijinakkan' : 'Meledak'}</Badge>
 						<span class="h-text">
-							<strong>Round {h.round}</strong> · {DIFFICULTIES[h.difficulty].label} · {h.defuserName} defusing
+							<strong>Ronde {h.round}</strong> · {DIFFICULTIES[h.difficulty].label} · {h.defuserName} sebagai penjinak
 						</span>
 						<span class="h-time">{h.defused ? formatTimer(h.msLeft) : `${h.strikes}✕`}</span>
 					</li>

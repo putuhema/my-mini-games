@@ -70,7 +70,7 @@
 		solvedCount = count;
 	});
 
-	const NAMES = { wires: 'Wires', button: 'Button', keypad: 'Keypad', simon: 'Simon' };
+	const NAMES = { wires: 'Kabel', button: 'Tombol', keypad: 'Papan tombol', simon: 'Simon Says' };
 </script>
 
 <div
@@ -82,8 +82,8 @@
 >
 	<header class="edge">
 		<div class="clock" class:urgent>
-			<span class="digits" aria-label="Time left {timer}">{timer}</span>
-			<span class="strikes" aria-label="{strikes} of {MAX_STRIKES} strikes">
+			<span class="digits" aria-label="Sisa waktu {timer}">{timer}</span>
+			<span class="strikes" aria-label="{strikes} dari {MAX_STRIKES} kesalahan">
 				{#each { length: MAX_STRIKES - 1 } as _, i (i)}
 					<span class="strike" class:on={i < strikes}><XIcon weight="bold" size="0.9rem" /></span>
 				{/each}
@@ -92,14 +92,14 @@
 
 		<div class="plates">
 			<div class="plate serial">
-				<small>Serial</small>
+				<small>No. seri</small>
 				<strong>{bomb.serial}</strong>
 			</div>
 			<div class="plate">
-				<small>Batteries</small>
+				<small>Baterai</small>
 				<span class="batteries">
 					{#each { length: bomb.batteries } as _, i (i)}<span class="battery"></span>{/each}
-					{#if bomb.batteries === 0}<strong>none</strong>{/if}
+					{#if bomb.batteries === 0}<strong>tidak ada</strong>{/if}
 				</span>
 			</div>
 			{#each bomb.indicators as ind (ind.label)}
@@ -114,8 +114,8 @@
 	<div class="modules">
 		{#each bomb.modules as m, i (i)}
 			{@const flash = shaking && lastStrike?.module === i}
-			<section class="module" class:solved={m.solved} class:flash aria-label="{NAMES[m.type]} module">
-				<span class="status" aria-label={m.solved ? 'Disarmed' : 'Armed'}>
+			<section class="module" class:solved={m.solved} class:flash aria-label="Modul {NAMES[m.type]}">
+				<span class="status" aria-label={m.solved ? 'Dijinakkan' : 'Aktif'}>
 					{#if m.solved}<CheckIcon weight="bold" size="0.8rem" />{/if}
 				</span>
 				{#if m.type === 'wires'}

@@ -24,7 +24,7 @@
 			class="key"
 			class:done
 			disabled={disabled || done}
-			aria-label="Key {i + 1}{done ? ', pressed' : ''}"
+			aria-label="Tombol {i + 1}{done ? ', sudah ditekan' : ''}"
 			onclick={() => {
 				sfx.blip();
 				onpress(i);

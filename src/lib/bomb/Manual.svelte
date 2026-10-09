@@ -16,20 +16,20 @@
 	let { manual }: { manual: Manual } = $props();
 
 	const TABS = [
-		{ id: 'basics', label: 'Basics' },
-		{ id: 'wires', label: 'Wires' },
-		{ id: 'button', label: 'Button' },
-		{ id: 'keypad', label: 'Keypad' },
+		{ id: 'basics', label: 'Dasar' },
+		{ id: 'wires', label: 'Kabel' },
+		{ id: 'button', label: 'Tombol' },
+		{ id: 'keypad', label: 'Papan tombol' },
 		{ id: 'simon', label: 'Simon' }
 	] as const;
 	let tab = $state<(typeof TABS)[number]['id']>('basics');
 
-	const cap = (s: string) => s[0].toUpperCase() + s.slice(1);
-	const ACTION = { tap: 'press and immediately release it', hold: 'hold it down (see below)' };
+	const ACTION = { tap: 'tekan lalu segera lepaskan', hold: 'tekan dan tahan (lihat petunjuk di bawah)' };
+	const colorName: Record<string, string> = { red: 'Merah', blue: 'Biru', yellow: 'Kuning', white: 'Putih', black: 'Hitam', green: 'Hijau' };
 </script>
 
 <div class="manual">
-	<div class="tabs" role="tablist" aria-label="Manual sections">
+	<div class="tabs" role="tablist" aria-label="Bagian panduan">
 		{#each TABS as t (t.id)}
 			<button role="tab" aria-selected={tab === t.id} class:active={tab === t.id} onclick={() => (tab = t.id)}>
 				{t.label}
@@ -39,73 +39,73 @@
 
 	<article class="page">
 		{#if tab === 'basics'}
-			<h2>Bomb Defusal Manual</h2>
-			<p class="edition">Edition {manual.edition} · this edition is only valid for this bomb</p>
-			<p>You can't see the bomb. Your partner can. Get them to describe it, then tell them exactly what to do.</p>
-			<h3>Ask about the casing first</h3>
+			<h2>Panduan Menjinakkan Bom</h2>
+			<p class="edition">Edisi {manual.edition} · hanya berlaku untuk bom ini</p>
+			<p>Kamu tidak bisa melihat bom, tetapi pasanganmu bisa. Minta dia menjelaskan bomnya, lalu beri tahu tindakan yang tepat.</p>
+			<h3>Tanyakan informasi pada badan bom</h3>
 			<ul>
-				<li><strong>Serial number</strong> — does it contain a vowel? Is the last digit odd?</li>
-				<li><strong>Batteries</strong> — how many?</li>
-				<li><strong>Indicators</strong> — small labels like <code>FRK</code>. Which ones are lit?</li>
+				<li><strong>Nomor seri</strong> — apakah ada huruf vokal? Apakah angka terakhirnya ganjil?</li>
+				<li><strong>Baterai</strong> — ada berapa?</li>
+				<li><strong>Indikator</strong> — label kecil seperti <code>FRK</code>. Mana yang menyala?</li>
 			</ul>
-			<h3>Strikes</h3>
+			<h3>Kesalahan</h3>
 			<p>
-				Every mistake is a strike and costs {STRIKE_PENALTY_MS / 1000} seconds. {MAX_STRIKES} strikes and it's
-				over. Disarm every module before the timer hits 0:00.
+				Setiap kesalahan mengurangi waktu {STRIKE_PENALTY_MS / 1000} detik. Jika membuat {MAX_STRIKES} kesalahan, permainan berakhir.
+				Selesaikan semua modul sebelum waktu habis.
 			</p>
-			<h3>Modules</h3>
+			<h3>Modul</h3>
 			<p>
-				The bomb carries a mix of <button class="link" onclick={() => (tab = 'wires')}>wires</button>,
-				<button class="link" onclick={() => (tab = 'button')}>a big button</button>,
-				<button class="link" onclick={() => (tab = 'keypad')}>a symbol keypad</button> and
-				<button class="link" onclick={() => (tab = 'simon')}>Simon Says</button>, sometimes more than one of
-				each. A module is done when its light turns green.
+				Bom memiliki beberapa modul: <button class="link" onclick={() => (tab = 'wires')}>kabel</button>,
+				<button class="link" onclick={() => (tab = 'button')}>tombol besar</button>,
+				<button class="link" onclick={() => (tab = 'keypad')}>papan tombol simbol</button> dan
+				<button class="link" onclick={() => (tab = 'simon')}>Simon Says</button>. Beberapa modul bisa muncul lebih dari sekali.
+				Modul selesai saat lampunya berubah hijau.
 			</p>
 		{:else if tab === 'wires'}
-			<h2>Wires</h2>
-			<p>A module has 3–6 wires, counted from the top. Cut exactly one. Find the table for the wire count and use the first rule that applies.</p>
+			<h2>Kabel</h2>
+			<p>Setiap modul memiliki 3–6 kabel, dihitung dari atas. Potong tepat satu kabel. Cari tabel sesuai jumlah kabel, lalu ikuti aturan pertama yang cocok.</p>
 			{#each manual.wires as table (table.count)}
 				<section class="rule-block">
-					<h3>{table.count} wires</h3>
+					<h3>{table.count} kabel</h3>
 					<ol>
 						{#each table.rules as rule, i (i)}
 							<li>
-								{i === 0 ? 'If' : 'Otherwise, if'}
+								{i === 0 ? 'Jika' : 'Jika tidak,'}
 								<strong>{describeWireCond(rule.cond)}</strong>, {describeWireAction(rule.action)}.
 							</li>
 						{/each}
-						<li>Otherwise, cut the {ordinal(table.fallback)} wire.</li>
+						<li>Jika tidak ada yang cocok, potong kabel ke-{ordinal(table.fallback)}.</li>
 					</ol>
 				</section>
 			{/each}
 		{:else if tab === 'button'}
-			<h2>The Button</h2>
-			<p>One big coloured button with a word on it. Use the first rule that applies.</p>
+			<h2>Tombol Besar</h2>
+			<p>Satu tombol besar berwarna dengan tulisan di atasnya. Ikuti aturan pertama yang cocok.</p>
 			<ol class="rule-block">
 				{#each manual.button.rules as rule, i (i)}
 					<li>
-						{i === 0 ? 'If' : 'Otherwise, if'} <strong>{describeButtonCond(rule.cond)}</strong>,
+						{i === 0 ? 'Jika' : 'Jika tidak,'} <strong>{describeButtonCond(rule.cond)}</strong>,
 						{ACTION[rule.action]}.
 					</li>
 				{/each}
-				<li>Otherwise, {ACTION[manual.button.fallback]}.</li>
+			<li>Jika tidak ada yang cocok, {ACTION[manual.button.fallback]}.</li>
 			</ol>
-			<h3>Holding the button</h3>
-			<p>While it's held, a strip beside it lights up. Release when the countdown timer has this digit in <em>any</em> position:</p>
+			<h3>Menahan tombol</h3>
+			<p>Saat tombol ditahan, sebuah garis di sebelahnya akan menyala. Lepaskan ketika angka ini muncul di <em>posisi mana pun</em> pada penghitung waktu:</p>
 			<div class="strip-table">
 				{#each STRIP_COLORS as color (color)}
 					<div class="strip-row">
 						<span class="swatch" style="--s: var(--sw-{color})"></span>
-						<span>{cap(color)} strip</span>
+						<span>Garis {colorName[color] ?? color}</span>
 						<strong>{manual.button.strip[color]}</strong>
 					</div>
 				{/each}
 			</div>
 		{:else if tab === 'keypad'}
-			<h2>Keypad</h2>
+			<h2>Papan Tombol</h2>
 			<p>
-				Four keys, each with a symbol. Only one column below has all four. Press the keys in the order
-				they appear in that column, top to bottom.
+				Ada empat tombol, masing-masing dengan simbol. Hanya satu kolom di bawah yang memuat keempatnya.
+				Tekan tombol sesuai urutan simbol pada kolom tersebut, dari atas ke bawah.
 			</p>
 			<div class="columns">
 				{#each manual.keypad as column, c (c)}
@@ -121,28 +121,28 @@
 		{:else if tab === 'simon'}
 			<h2>Simon Says</h2>
 			<p>
-				Four coloured pads flash a sequence. For each flash, press the pad from the table instead.
-				After every round the sequence grows by one. The table changes with the serial number and
-				the number of strikes, so keep track.
+				Empat tombol berwarna akan berkedip membentuk urutan. Untuk setiap kedipan, tekan warna pengganti
+				sesuai tabel. Urutannya bertambah satu setiap ronde. Tabel bergantung pada nomor seri dan jumlah
+				kesalahan, jadi perhatikan keduanya.
 			</p>
-			{#each [{ title: 'Serial number contains a vowel', rows: manual.simon.vowel }, { title: 'No vowel in the serial number', rows: manual.simon.noVowel }] as table (table.title)}
+			{#each [{ title: 'Nomor seri mengandung huruf vokal', rows: manual.simon.vowel }, { title: 'Nomor seri tidak mengandung huruf vokal', rows: manual.simon.noVowel }] as table (table.title)}
 				<section class="rule-block">
 					<h3>{table.title}</h3>
 					<table>
 						<thead>
 							<tr>
-								<th>Flash</th>
-								<th>0 strikes</th>
-								<th>1 strike</th>
-								<th>2 strikes</th>
+								<th>Kedipan</th>
+								<th>0 kesalahan</th>
+								<th>1 kesalahan</th>
+								<th>2 kesalahan</th>
 							</tr>
 						</thead>
 						<tbody>
 							{#each SIMON_COLORS as flash (flash)}
 								<tr>
-									<th><span class="chip" style="--s: var(--sw-{flash})">{flash}</span></th>
+							<th><span class="chip" style="--s: var(--sw-{flash})">{colorName[flash] ?? flash}</span></th>
 									{#each table.rows as row, i (i)}
-										<td><span class="chip" style="--s: var(--sw-{row[flash]})">{row[flash]}</span></td>
+						<td><span class="chip" style="--s: var(--sw-{row[flash]})">{colorName[row[flash]] ?? row[flash]}</span></td>
 									{/each}
 								</tr>
 							{/each}

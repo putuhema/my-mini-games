@@ -34,7 +34,7 @@
 	}
 </script>
 
-<div class="button-module">
+<div class="button-module" aria-label="Modul tombol besar">
 	<button
 		class="big {color}"
 		class:down
@@ -59,7 +59,7 @@
 		{label}
 	</button>
 	<div class="strip" class:lit={!!strip} style={strip ? `--s: var(--strip-${strip})` : ''} aria-live="polite">
-		<span class="sr">{strip ? `Strip is ${strip}` : 'Strip is off'}</span>
+		<span class="sr">{strip ? `Garis menyala: ${strip}` : 'Garis tidak menyala'}</span>
 	</div>
 </div>
 

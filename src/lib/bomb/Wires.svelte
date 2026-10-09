@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { sfx } from '#lib/sound.svelte.ts';
+	const COLOR_NAMES: Record<string, string> = { red: 'merah', blue: 'biru', yellow: 'kuning', white: 'putih', black: 'hitam' };
 
 	let {
 		wires,
@@ -22,7 +23,7 @@
 			class:cut={isCut}
 			style="--w: var(--wire-{color})"
 			disabled={disabled || isCut}
-			aria-label="{color} wire {i + 1}{isCut ? ', cut' : ''}"
+			aria-label="Kabel {COLOR_NAMES[color]} nomor {i + 1}{isCut ? ', sudah dipotong' : ''}"
 			onclick={() => {
 				sfx.snip();
 				oncut(i);

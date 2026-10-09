@@ -30,22 +30,22 @@
 </script>
 
 <main>
-	<a class="close" href="/" aria-label="Back to all games"><XIcon weight="bold" size="1.5rem" /></a>
+	<a class="close" href="/" aria-label="Kembali ke semua permainan"><XIcon weight="bold" size="1.5rem" /></a>
 
 	<div class="intro">
 		<span class="mascot"><Sprite name="bomb" scale={11} /></span>
 		<div class="speech">
-			<h1>Bomb Defusal</h1>
+			<h1>Jinakkan Bom</h1>
 			<p>
-				One of you sees the bomb. The other has the manual. Get on a call, talk fast, and don't
-				explode. Every bomb — and every manual — is new.
+				Satu orang melihat bom, satu lagi memegang panduannya. Hubungi pasanganmu, sampaikan petunjuk
+				dengan cepat, dan jinakkan bom sebelum meledak. Setiap bom dan panduannya selalu berbeda.
 			</p>
 		</div>
 	</div>
 
 	<Card class="form">
-		<label class="label" for="name">Your name</label>
-		<input id="name" bind:value={name} maxlength="24" placeholder="e.g. Sayang" autocomplete="nickname" />
+		<label class="label" for="name">Namamu</label>
+		<input id="name" bind:value={name} maxlength="24" placeholder="mis. Sayang" autocomplete="nickname" />
 
 		<Button
 			full
@@ -54,10 +54,10 @@
 			disabled={busy || !name.trim()}
 			onclick={() => run(() => createRoom({ playerId: me.id, name }))}
 		>
-			Create a room
+			Buat ruang
 		</Button>
 
-		<div class="divider"><span>or join your partner</span></div>
+		<div class="divider"><span>atau gabung ke ruang pasanganmu</span></div>
 
 		<form
 			class="join"
@@ -70,12 +70,12 @@
 				bind:value={code}
 				maxlength="4"
 				placeholder="CODE"
-				aria-label="Room code"
+				aria-label="Kode ruang"
 				autocapitalize="characters"
 				autocomplete="off"
 			/>
 			<Button type="submit" variant="secondary" disabled={busy || !name.trim() || code.trim().length < 4}>
-				Join
+				Gabung
 			</Button>
 		</form>
 
