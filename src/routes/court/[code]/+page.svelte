@@ -13,6 +13,11 @@
 		SIDE_LABEL,
 		type ArgType,
 		type ClosingKey,
+		REACTION_META,
+		SHOUTS,
+		TURN_SECONDS,
+		type Reaction,
+		type ShoutKind,
 		type Side
 	} from '../../../../convex/court/rules';
 	import { errorMessage, me, saveName } from '#lib/player.svelte.ts';
@@ -47,6 +52,7 @@
 	const submitClosing = useMutation(api.court.closing);
 	const again = useMutation(api.court.again);
 	const chooseCase = useMutation(api.court.chooseCase);
+	const shoutMut = useMutation(api.court.shout);
 	const casesQuery = useQuery(api.court.cases, {});
 	const cases = $derived(casesQuery.data ?? []);
 	const serverTime = useMutation(api.court.now);
@@ -60,6 +66,10 @@
 	let error = $state('');
 	let toast = $state('');
 	let alarm = $state('');
+	/** Big ruling stamp in the middle of the screen: KUAT!, DITOLAK!, GERTAKAN TERBONGKAR! */
+	let stamp = $state<{ label: string; tone: string; side: string; key: number }>();
+	/** The last shout, shown to both players. */
+	let shouting = $state<{ text: string; side: Side; key: number }>();
 	let copied = $state(false);
 
 	type Tab = 'evidence' | 'timeline' | 'witness' | 'arguments';
@@ -92,7 +102,48 @@
 	});
 	const msLeft = $derived(room?.closingDeadline ? Math.max(0, room.closingDeadline - (now + offset)) : 0);
 
+	// ---- Turn clock: runs out → the turn loses one action ----
+	const turnLeft = $derived(live && room?.turnDeadline ? Math.max(0, room.turnDeadline - (now + offset)) : 0);
+	const turnTotal = $derived(room && live ? TURN_SECONDS[room.phase as keyof typeof TURN_SECONDS] * 1000 : 1);
+	let lastTick = -1;
+	$effect(() => {
+		const secs = Math.ceil(turnLeft / 1000);
+		untrack(() => {
+			if (myTurn && secs !== lastTick && secs > 0 && secs <= 5) sfx.tick(true);
+			lastTick = secs;
+		});
+	});
+
+	// ---- Shouts ----
+	const SHOUT_KEYS = Object.keys(SHOUTS) as ShoutKind[];
+	// Undefined until the room loads, so an old shout isn't replayed on page load.
+	let lastShout: number | undefined;
+	$effect(() => {
+		if (!room) return;
+		const sh = room.shout;
+		untrack(() => {
+			if (lastShout === undefined) return void (lastShout = sh?.at ?? 0);
+			if (!sh || sh.at === lastShout) return;
+			lastShout = sh.at;
+			if (Date.now() + offset - sh.at > 4000) return;
+			const key = sh.at;
+			shouting = { text: SHOUTS[sh.kind as ShoutKind] ?? sh.kind, side: sh.side, key };
+			if (sh.kind === 'keberatan' || sh.kind === 'kena') sfx.strike();
+			else sfx.whoosh();
+			setTimeout(() => shouting?.key === key && (shouting = undefined), 1500);
+		});
+	});
+	const doShout = (kind: ShoutKind) => room && shoutMut({ roomId: roomId(), playerId: me.id, kind }).catch(() => {});
+
 	// ---- Sounds and banners as the record grows ----
+	const STAMPS: Partial<Record<Reaction, string>> = {
+		strong: 'KUAT!',
+		sustained: 'DIKABULKAN!',
+		overruled: 'DITOLAK!',
+		exposed: 'GERTAKAN TERBONGKAR!',
+		proven: 'TERBUKTI!',
+		revealed: 'CATATAN BARU!'
+	};
 	let seen = -1;
 	let lastTurn: string | undefined;
 	$effect(() => {
@@ -102,12 +153,21 @@
 		untrack(() => {
 			if (seen >= 0 && newest > seen) {
 				for (const e of entries.filter((x) => x.seq > seen)) {
-					if (e.reaction === 'contradiction') {
+					const r = e.reaction as Reaction | undefined;
+					if (r === 'contradiction') {
 						alarm = e.ruling ?? '';
 						sfx.strike();
 						setTimeout(() => (alarm = ''), 3200);
-					} else if (e.reaction === 'exposed') sfx.miss();
-					else if (e.reaction === 'revealed') sfx.secret();
+						continue;
+					}
+					if (r && r in STAMPS) {
+						const key = e.seq;
+						stamp = { label: STAMPS[r]!, tone: REACTION_META[r].tone, side: e.side, key };
+						setTimeout(() => stamp?.key === key && (stamp = undefined), 1300);
+					}
+					if (r === 'exposed' || r === 'overruled') sfx.miss();
+					else if (r === 'revealed') sfx.secret();
+					else if (r === 'strong' || r === 'sustained' || r === 'proven') sfx.bell();
 					else if (e.side !== you) sfx.blip();
 				}
 			}
@@ -288,20 +348,28 @@
 	);
 	const guide = $derived.by(() => {
 		if (!room || !you || !live) return '';
-		if (!myTurn) {
+		if (!myTurn)
 			return room.phase === 'witness'
-				? 'Sambil menunggu: baca jawaban saksi, kutip yang berguna (klik chipnya), tandai bukti dengan 7/8/9.'
-				: 'Sambil menunggu: susun kutipan dan argumen Anda di tab Argumen — kirim begitu giliran tiba.';
-		}
+				? 'Sambil menunggu, baca keterangan saksi dan tandai bukti (7/8/9).'
+				: 'Sambil menunggu, siapkan kutipan di tab Argumen.';
 		return {
-			evidence: 'Giliran Anda: ajukan bukti rahasia (P), Tuduh/Bantah di tab Argumen, atau mohon klarifikasi majelis (Q) untuk membuka catatan tersegel.',
-			witness: `Giliran Anda: tanya saksi di tab Saksi — pilih pertanyaan baku (1–${topicsFor(room.case).length}) atau tulis sendiri. Jawaban masuk berita acara dan bisa dikutip.`,
-			cross: 'Giliran Anda: hadapkan saksi dengan bukti di tab Saksi. Saksi yang terbentur bukti memicu kontradiksi — lalu Bantah keterangannya.'
+			evidence: 'Ajukan bukti (P), Tuduh/Bantah di tab Argumen, atau mohon klarifikasi (Q).',
+			witness: `Tanya saksi di tab Saksi — pertanyaan baku 1–${topicsFor(room.case).length} atau tulis sendiri.`,
+			cross: 'Hadapkan saksi dengan bukti di tab Saksi, lalu Bantah keterangannya.'
 		}[room.phase as 'evidence' | 'witness' | 'cross'];
 	});
+	let shoutMenu = $state(false);
 
 	// The live courtroom: on desktop it fills the screen, the record stays put and only the left column scrolls.
 	const inCourt = $derived(!!room && !!you && room.phase !== 'waiting' && room.phase !== 'verdict');
+
+	// While the judge deliberates, replay the moments that mattered.
+	const moments = $derived(
+		room?.phase === 'deliberating'
+			? room.entries.filter((e) => e.side !== 'court' && e.text && ['strong', 'accepted', 'sustained', 'contradiction', 'exposed', 'proven', 'overruled'].includes(e.reaction ?? ''))
+			: []
+	);
+	const highlight = $derived(moments.length ? moments[Math.floor(now / 2600) % moments.length] : undefined);
 
 	const phaseNumber = $derived(
 		room ? ({ briefing: 1, evidence: 2, witness: 3, cross: 4, closing: 5, deliberating: 6, verdict: 6, waiting: 0 } as const)[room.phase] : 0
@@ -396,24 +464,38 @@
 				<div class="main">
 					<Bench {room} />
 
-					<div class="phasebar">
-						<span class="eyebrow">Babak {phaseNumber}/6 · <b>{PHASE_TITLE[room.phase]}</b></span>
+					<div class="status" class:mine={myTurn} class:urgent={live && turnLeft < 10000}>
+						<span class="phase micro">{phaseNumber}/6 · {PHASE_TITLE[room.phase]}</span>
+						<span class="turn">
+							{#if live && myTurn}
+								<span class="marker"></span><b>Giliran Anda</b>
+								<span class="dim">· {room.budgets[you]} aksi{room.turnDeadline ? ` · ${Math.ceil(turnLeft / 1000)} dtk` : ''}</span>
+							{:else if live}
+								<span class="dim">Menunggu {room.turn ? SIDE_LABEL[room.turn] : ''}{room.turnDeadline ? ` · ${Math.ceil(turnLeft / 1000)} dtk` : ''}</span>
+							{/if}
+						</span>
+						<div class="shout-pick">
+							<button class="btn small" aria-expanded={shoutMenu} onclick={() => (shoutMenu = !shoutMenu)} title="Teriak ke lawan">📣</button>
+							{#if shoutMenu}
+								<div class="menu" role="menu">
+									{#each SHOUT_KEYS as k (k)}
+										<button role="menuitem" onclick={() => ((shoutMenu = false), doShout(k))}>{SHOUTS[k]}</button>
+									{/each}
+								</div>
+							{/if}
+						</div>
 						{#if live}
-							<span class="turn">
-								{#if myTurn}
-									<span class="marker"></span> <b>Giliran Anda</b> · sisa {room.budgets[you]} aksi
-								{:else}
-									Menunggu {room.turn ? SIDE_LABEL[room.turn] : ''}<span class="blink">_</span>
-								{/if}
-							</span>
-							<button class="btn small danger" disabled={!myTurn || busy} onclick={doRest}>Cukup <kbd>R</kbd></button>
+							<button class="btn small danger" disabled={!myTurn || busy} onclick={doRest} title="Cukupkan babak ini">Cukup <kbd>R</kbd></button>
+						{/if}
+						{#if live && room.turnDeadline}
+							<span class="timer" style:width="{Math.min(100, (turnLeft / turnTotal) * 100)}%" aria-hidden="true"></span>
 						{/if}
 					</div>
-					{#if guide}
-						<p class="guide" class:mine={myTurn}>
-							› {guide}
+					{#if guide || openClaims.length}
+						<p class="guide">
+							{guide}
 							{#if openClaims.length}
-								<b>Klaim lawan {openClaims.map((n) => `#${n}`).join(', ')} belum terbukti — klik “Tuntut bukti” di berita acara bila Anda curiga gertakan.</b>
+								<span class="alert">⚑ Klaim lawan {openClaims.map((n) => `#${n}`).join(', ')} belum terbukti — Tuntut bukti?</span>
 							{/if}
 						</p>
 					{/if}
@@ -433,6 +515,12 @@
 								Tiap pihak mendapat {pace?.evidence} aksi pembuktian, {pace?.witness} pertanyaan saksi, dan
 								{pace?.cross} langkah pemeriksaan silang, ditambah {pace?.clarifications} permohonan klarifikasi yang bisa membuka catatan tersegel.
 							</p>
+							<ol class="howto">
+								<li><b>Ajukan & Tuduh.</b> Tuduh dengan dua bukti yang mendukung → <span class="tone-good">KUAT</span>.</li>
+								<li><b>Periksa saksi, lalu hadapkan dengan bukti.</b> Saksi yang terbentur bukti → <span class="tone-bad">KONTRADIKSI</span>.</li>
+								<li><b>Bantah bukti lawan.</b> Curiga gertakan? <b>Tuntut bukti</b> kapan saja — gratis.</li>
+							</ol>
+							<p class="micro dim">Tiap giliran ada jam. Kalimat boleh dikosongkan — majelis mencatat kalimat baku. Teriak “KEBERATAN!” kapan saja.</p>
 							{#if canPickCase}{@render casePicker()}{/if}
 							{#if done}
 								<p class="sealed">Pernyataan pembuka Anda tersegel. {theyDone ? 'Sidang dibuka…' : 'Menunggu lawan'}<span class="blink">_</span></p>
@@ -445,10 +533,10 @@
 									}}
 								>
 									<label class="eyebrow" for="opening">Pernyataan pembuka · tersegel sampai keduanya masuk</label>
-									<textarea id="opening" bind:value={opening} maxlength={MAX_OPENING} placeholder="Yang Mulia, bukti-bukti akan menunjukkan…"></textarea>
+									<textarea id="opening" bind:value={opening} maxlength={MAX_OPENING} placeholder="Opsional. Kosongkan untuk pembuka singkat."></textarea>
 									<div class="row">
 										<span class="micro">{theyDone ? 'Lawan sudah siap.' : 'Lawan masih bersiap.'}</span>
-										<button class="btn primary" disabled={busy || opening.trim().length < 20}>Bacakan <kbd>↵</kbd></button>
+										<button class="btn primary" disabled={busy}>{opening.trim() ? 'Bacakan' : 'Siap'} <kbd>↵</kbd></button>
 									</div>
 								</form>
 							{/if}
@@ -466,6 +554,15 @@
 							<span class="eyebrow">Sidang diskors</span>
 							<h2>Majelis bermusyawarah<span class="blink">…</span></h2>
 							<p class="dim">Hakim menimbang setiap argumen, keberatan, dan gertakan di berita acara.</p>
+							{#if highlight}
+								{#key highlight.seq}
+									<div class="replay side-{highlight.side}">
+										<span class="micro">MENIMBANG #{String(highlight.seq).padStart(2, '0')}</span>
+										<p>{highlight.text}</p>
+										{#if highlight.reaction}<span class="micro tone-{REACTION_META[highlight.reaction as Reaction].tone}">{REACTION_META[highlight.reaction as Reaction].label}</span>{/if}
+									</div>
+								{/key}
+							{/if}
 						</section>
 					{/if}
 
@@ -515,6 +612,7 @@
 									onClearTarget={() => (targetSeq = undefined)}
 									onToggleSeal={toggleSeal}
 									onRemove={(key) => (basket = basket.filter((c) => c.key !== key))}
+									onToggleCite={toggleCite}
 									onArgue={doArgue}
 								/>
 							{/if}
@@ -534,6 +632,19 @@
 			<span class="big">⚠️ KONTRADIKSI DITEMUKAN</span>
 			<p>{alarm}</p>
 		</div>
+	{/if}
+	{#if stamp}
+		{#key stamp.key}
+			<div class="stamp tone-{stamp.tone} side-{stamp.side}" aria-hidden="true">{stamp.label}</div>
+		{/key}
+	{/if}
+	{#if shouting}
+		{#key shouting.key}
+			<div class="shout from-{shouting.side}" role="status">
+				<span class="who">{shouting.side === you ? 'Anda' : SIDE_LABEL[shouting.side]}</span>
+				<span class="text">{shouting.text}</span>
+			</div>
+		{/key}
 	{/if}
 	{#if toast}<div class="toast">{toast}</div>{/if}
 </Mek>
@@ -601,26 +712,6 @@
 		font-weight: 400;
 	}
 
-	.phasebar {
-		display: flex;
-		align-items: center;
-		gap: 16px;
-		flex-wrap: wrap;
-		border-top: 2px solid var(--rule-hi);
-		border-bottom: 2px solid var(--rule-hi);
-		padding: 8px 0;
-	}
-	.turn {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		margin-left: auto;
-		color: var(--ink-2);
-	}
-	.turn b {
-		color: var(--ink);
-		font-weight: 400;
-	}
 
 	.court {
 		display: grid;
@@ -745,7 +836,7 @@
 		color: var(--signal);
 	}
 	.tabpanel {
-		min-height: 320px;
+		min-height: 200px;
 	}
 
 	.transcript {
@@ -838,18 +929,248 @@
 		outline: 2px solid var(--cursor);
 		outline-offset: 2px;
 	}
-	.guide {
-		margin: -4px 0 10px;
-		color: var(--ink-dim);
-		line-height: 1.05;
-	}
-	.guide.mine {
+	.howto {
+		margin: 4px 0 0;
+		padding-left: 22px;
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
 		color: var(--ink-2);
 	}
-	.guide b {
-		display: block;
+	.howto b {
 		font-weight: 400;
+		color: var(--ink);
+	}
+
+
+	.stamp {
+		position: fixed;
+		z-index: 140;
+		top: 38%;
+		left: 50%;
+		translate: -50% -50%;
+		pointer-events: none;
+		font-family: var(--font-ui);
+		font-size: clamp(26px, 6vw, 56px);
+		letter-spacing: 0.06em;
+		padding: 10px 22px;
+		border: 4px solid currentColor;
+		background: var(--void);
+		box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.6);
+		animation: slam 1300ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+	}
+	@keyframes slam {
+		from {
+			opacity: 0;
+			scale: 1.8;
+			rotate: -8deg;
+		}
+		15% {
+			opacity: 1;
+			scale: 1;
+			rotate: -3deg;
+		}
+		80% {
+			opacity: 1;
+			scale: 1;
+			rotate: -3deg;
+		}
+		to {
+			opacity: 0;
+			scale: 0.96;
+			rotate: -3deg;
+		}
+	}
+
+	.shout {
+		position: fixed;
+		z-index: 145;
+		top: 18%;
+		left: 0;
+		right: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+		pointer-events: none;
+		animation: shout-in 1500ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+	}
+	.shout .text {
+		font-family: var(--font-ui);
+		font-size: clamp(34px, 9vw, 92px);
+		letter-spacing: 0.04em;
+		padding: 6px 28px;
+		background: var(--void);
+		border: 6px solid currentColor;
+		box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.6);
+		rotate: -4deg;
+	}
+	.shout .who {
+		font-family: var(--font-ui);
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		color: var(--ink);
+		background: var(--void);
+		padding: 2px 8px;
+	}
+	.from-defense {
+		color: var(--def);
+		--from: -40vw;
+	}
+	.from-prosecution {
+		color: var(--atk);
+		--from: 40vw;
+	}
+	@keyframes shout-in {
+		from {
+			opacity: 0;
+			translate: var(--from) 0;
+		}
+		14% {
+			opacity: 1;
+			translate: 0 0;
+		}
+		82% {
+			opacity: 1;
+			translate: 0 0;
+		}
+		to {
+			opacity: 0;
+			translate: 0 -12px;
+		}
+	}
+
+	.replay {
+		margin-top: 8px;
+		border-left: 3px solid var(--rule-hi);
+		padding: 6px 10px;
+		animation: replay-in 400ms ease-out;
+	}
+	.replay.side-defense {
+		border-left-color: var(--def);
+	}
+	.replay.side-prosecution {
+		border-left-color: var(--atk);
+	}
+	.replay p {
+		color: var(--ink);
+	}
+	@keyframes replay-in {
+		from {
+			opacity: 0;
+			translate: 0 6px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.stamp,
+		.shout,
+		.replay {
+			animation-duration: 1ms;
+			animation-fill-mode: none;
+		}
+	}
+	/* One line: phase, whose turn and the clock (a thin line along the bottom), shout, rest. */
+	.status {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 6px 10px 8px;
+		border: 2px solid var(--rule);
+		background: var(--night-2);
+	}
+	.status.mine {
+		border-color: var(--signal-deep);
+	}
+	.status .phase {
+		color: var(--ink-dim);
+		white-space: nowrap;
+	}
+	.status .turn {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		min-width: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	@media (max-width: 720px) {
+		.status {
+			flex-wrap: wrap;
+			row-gap: 6px;
+		}
+		.status .phase {
+			flex: 1;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+		.status .turn {
+			order: 3;
+			flex-basis: 100%;
+		}
+	}
+	.status .turn b {
+		font-weight: 400;
+		color: var(--ink);
+	}
+	.status.urgent.mine .turn .dim {
+		color: var(--hp);
+	}
+	.timer {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		height: 3px;
+		background: var(--ink-ghost);
+		transition: width 250ms linear;
+	}
+	.status.mine .timer {
+		background: var(--signal);
+	}
+	.status.urgent .timer {
+		background: var(--hp);
+	}
+	.shout-pick {
+		position: relative;
+	}
+	.shout-pick .menu {
+		position: absolute;
+		z-index: 30;
+		right: 0;
+		top: calc(100% + 6px);
+		display: flex;
+		flex-direction: column;
+		min-width: 170px;
+		background: var(--void);
+		border: 2px solid var(--rule-hi);
+		box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.5);
+	}
+	.shout-pick .menu button {
+		all: unset;
+		cursor: pointer;
+		padding: 8px 12px;
+		font-family: var(--font-ui);
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		color: var(--ink-2);
+	}
+	.shout-pick .menu button:hover,
+	.shout-pick .menu button:focus-visible {
+		background: var(--night-3);
+		color: var(--ink);
+	}
+	.guide {
+		margin: -6px 0 0;
+		color: var(--ink-dim);
+		font-size: 19px;
+		line-height: 1.05;
+	}
+	.guide .alert {
+		display: block;
 		color: var(--luck);
-		margin-top: 2px;
 	}
 </style>

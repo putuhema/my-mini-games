@@ -40,7 +40,20 @@ export const PHASE_TITLE: Record<Phase, string> = {
 
 /** Permintaan ke majelis untuk membuka catatan tersembunyi, per pihak, sepanjang sidang. */
 export const CLARIFICATIONS = 2;
-export const CLOSING_SECONDS = 180;
+export const CLOSING_SECONDS = 120;
+
+/** Jam giliran per fase, dalam detik. Habis = satu langkah hangus. */
+export const TURN_SECONDS: Record<TurnPhase, number> = { evidence: 60, witness: 40, cross: 60 };
+
+/** Teriakan yang bisa dilempar kapan saja selama sidang. */
+export const SHOUTS = {
+	keberatan: 'KEBERATAN!',
+	tunggu: 'TUNGGU DULU!',
+	kena: 'KENA KAU!',
+	hmm: 'HMMM…'
+} as const;
+export type ShoutKind = keyof typeof SHOUTS;
+export const SHOUT_COOLDOWN_MS = 2500;
 export const MAX_TEXT = 600;
 export const MAX_OPENING = 900;
 

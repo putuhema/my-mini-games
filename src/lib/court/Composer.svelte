@@ -12,6 +12,7 @@
 		onClearTarget,
 		onToggleSeal,
 		onRemove,
+		onToggleCite,
 		onArgue
 	}: {
 		room: CourtView;
@@ -22,6 +23,7 @@
 		onClearTarget: () => void;
 		onToggleSeal: (key: string) => void;
 		onRemove: (key: string) => void;
+		onToggleCite: (key: string) => void;
 		onArgue: (arg: { argType: ArgType; suspect?: string; text: string }) => Promise<boolean>;
 	} = $props();
 
@@ -47,10 +49,15 @@
 		return !!ev && ev.kind === room.you && !ev.onRecord;
 	};
 	const publicCites = $derived(basket.filter((c) => !c.sealed));
+	// Everything you can cite, right here: no trip to the evidence tab.
+	const pickable = $derived([
+		...room.evidence.filter((e) => (e.onRecord || e.kind === room.you) && !e.discredited).map((e) => ({ key: e.id, title: e.title })),
+		...room.onRecord.filter((k) => k.includes('.')).map((k) => ({ key: k, title: factTitle(k, room.evidence, room.case) }))
+	]);
+	const inBasket = (key: string) => basket.some((c) => c.key === key);
 	const problem = $derived.by(() => {
 		if (meta.pair && publicCites.length !== 2) return 'Kutip tepat dua butir (tidak tersegel).';
 		if (meta.target && !publicCites.length) return 'Kutip dulu butir yang Anda bantah.';
-		if (text.trim().length < 8) return 'Sampaikan argumen Anda dalam satu-dua kalimat.';
 		return '';
 	});
 	const slotLabel = (i: number) => (meta.pair ? ['A', 'B'][i] ?? '+' : meta.target ? (i === 0 ? 'SASARAN' : 'DASAR') : String(i + 1));
@@ -74,7 +81,7 @@
 
 <form class="composer" onsubmit={submit}>
 	{#if !allowed}
-		<p class="micro">Argumen diajukan di babak pembuktian dan pemeriksaan silang.</p>
+		<p class="micro dim">Argumen diajukan di babak pembuktian dan pemeriksaan silang.</p>
 	{/if}
 
 	<div class="moves" role="radiogroup" aria-label="Langkah">
@@ -85,14 +92,11 @@
 			</button>
 		{/each}
 	</div>
-	<div class="explain">
-		<p class="hint">› {meta.hint[you]}</p>
-		<p class="example micro">Contoh: {meta.example}</p>
-	</div>
+	<p class="hint" title={`Contoh: ${meta.example}`}>{meta.hint[you]}</p>
 
-	{#if meta.suspect}
+	{#if meta.suspect && suspects.length > 1}
 		<div class="row">
-			<span class="eyebrow">{you === 'prosecution' ? 'Terdakwa' : 'Pelaku lain'}</span>
+			<span class="eyebrow">Tuduh</span>
 			{#each suspects as [id, s] (id)}
 				<button type="button" class="chip" class:sel={suspect === id} onclick={() => (picked = id)}>{s.name}</button>
 			{/each}
@@ -100,42 +104,45 @@
 	{/if}
 
 	<div class="cites">
-		<span class="eyebrow">Kutipan</span>
-		<div class="slots">
-			{#each basket as c, i (c.key)}
-				<div class="cite" class:sealed={c.sealed}>
-					<span class="n">{slotLabel(i)}</span>
-					<span class="k" title={factTitle(c.key, room.evidence, room.case)}>{factName(c.key, room.case)}</span>
-					{#if sealable(c.key)}
-						<button type="button" class="mini" title="Dasar tersegel tetap tersembunyi kecuali lawan menuntut bukti" onclick={() => onToggleSeal(c.key)}>
-							{c.sealed ? '🔒 SEGEL' : 'BUKA'}
-						</button>
-					{/if}
-					<button type="button" class="mini" aria-label="Hapus" onclick={() => onRemove(c.key)}>×</button>
-				</div>
-			{/each}
-			{#each Array(Math.max(0, 2 - basket.length)) as _, i (i)}
-				<div class="cite slot"><span class="n">{slotLabel(basket.length + i)}</span><span class="micro">kosong</span></div>
+		<span class="eyebrow">
+			Kutipan
+			{#if basket.length}
+				{#each basket as c, i (c.key)}
+					<span class="cite" class:sealed={c.sealed}>
+						<i>{slotLabel(i)}</i>
+						<b title={factTitle(c.key, room.evidence, room.case)}>{factName(c.key, room.case)}</b>
+						{#if sealable(c.key)}
+							<button type="button" class="mini" title="Segel: tetap tersembunyi kecuali lawan menuntut bukti (gertakan)" onclick={() => onToggleSeal(c.key)}>
+								{c.sealed ? '🔒' : '🔓'}
+							</button>
+						{/if}
+						<button type="button" class="mini" aria-label="Hapus" onclick={() => onRemove(c.key)}>×</button>
+					</span>
+				{/each}
+			{:else}
+				<span class="dim">· pilih di bawah</span>
+			{/if}
+		</span>
+		<div class="pick" aria-label="Pilih kutipan">
+			{#each pickable as p (p.key)}
+				<button type="button" class="chip" class:sel={inBasket(p.key)} title={p.title} onclick={() => onToggleCite(p.key)}>
+					{factName(p.key, room.case)}
+				</button>
 			{/each}
 		</div>
-		<p class="micro">
-			Tekan <kbd>C</kbd> pada bukti, atau klik chip di berita acara, untuk mengutip. Bukti rahasia yang dikutip ikut diajukan — atau
-			<b>segel</b> sebagai dasar tersembunyi dan menggertak.
-		</p>
 	</div>
 
 	{#if targetSeq !== undefined}
 		<p class="target">Menanggapi #{targetSeq} <button type="button" class="mini" onclick={onClearTarget}>×</button></p>
 	{/if}
 
-	<textarea bind:value={text} maxlength="600" placeholder="Yang Mulia, …" disabled={!allowed}></textarea>
-
 	<div class="send">
-		<span class="micro problem">{allowed ? (myTurn ? problem : 'Siapkan sekarang — kirim saat giliran Anda.') : ''}</span>
-		<button class="btn primary" disabled={!allowed || !myTurn || busy || !!problem}>
+		<input bind:value={text} maxlength="600" placeholder="Kalimat Anda (opsional)" disabled={!allowed} aria-label="Kalimat argumen" />
+		<button class="btn primary" disabled={!allowed || !myTurn || busy || !!problem} title={myTurn ? problem : 'Siapkan sekarang, kirim saat giliran Anda'}>
 			{myTurn ? meta.label : 'Tunggu giliran'} <kbd>⌘↵</kbd>
 		</button>
 	</div>
+	{#if allowed && myTurn && problem}<p class="micro problem">{problem}</p>{/if}
 </form>
 
 <style>
@@ -171,42 +178,6 @@
 		color: var(--ink-dim);
 	}
 
-	.cites {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-	}
-	.slots {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-	}
-	.cite {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		min-width: 120px;
-		min-height: 36px;
-		padding: 4px 8px;
-		border: 2px solid var(--rule-hi);
-		background: var(--night-2);
-	}
-	.cite.slot {
-		border-style: dashed;
-		border-color: var(--rule);
-		justify-content: center;
-	}
-	.cite.sealed {
-		border-color: var(--luck-deep);
-	}
-	.n {
-		font-family: var(--font-ui);
-		font-size: 10px;
-		color: var(--ink-ghost);
-	}
-	.k {
-		color: var(--ink);
-	}
 	.mini {
 		all: unset;
 		cursor: pointer;
@@ -229,9 +200,46 @@
 	}
 	.send {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
-		gap: 12px;
+		gap: 8px;
+	}
+	.send input {
+		flex: 1;
+		min-width: 0;
+	}
+	.hint {
+		color: var(--ink-dim);
+		line-height: 1.05;
+	}
+	.cites {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+	.cites .eyebrow {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px;
+	}
+	.cite {
+		display: inline-flex;
+		align-items: center;
+		gap: 4px;
+		padding: 1px 4px 1px 6px;
+		border: 2px solid var(--cursor);
+		color: var(--ink);
+		letter-spacing: 0.04em;
+	}
+	.cite i {
+		font-style: normal;
+		color: var(--ink-dim);
+	}
+	.cite b {
+		font-weight: 400;
+	}
+	.cite.sealed {
+		border-color: var(--luck);
 	}
 	.problem {
 		color: var(--olive);
@@ -265,17 +273,18 @@
 		outline-offset: 2px;
 		color: var(--ink);
 	}
-	.explain {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-	.example {
-		color: var(--ink-ghost);
-	}
 	@media (max-width: 720px) {
 		.moves {
 			grid-template-columns: 1fr 1fr;
 		}
+	}
+	.pick {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+	}
+	.pick .chip {
+		padding: 3px 7px;
+		font-size: 10px;
 	}
 </style>

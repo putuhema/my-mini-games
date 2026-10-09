@@ -12,7 +12,10 @@ import {
 	MAX_TEXT,
 	other,
 	paceFor,
+	SHOUT_COOLDOWN_MS,
+	SHOUTS,
 	SIDE_LABEL,
+	TURN_SECONDS,
 	topicLabel,
 	topicsFor,
 	TURN_PHASES,
@@ -171,6 +174,15 @@ class Session {
 		}
 	}
 	async save() {
+		// Setiap kali giliran berpindah (atau fase berganti), jam giliran mulai lagi.
+		const phase = this.patch.phase ?? this.room.phase;
+		if (isTurnPhase(phase) && ('turn' in this.patch || 'budgets' in this.patch || 'phase' in this.patch)) {
+			const turnDeadline = Date.now() + TURN_SECONDS[phase] * 1000;
+			this.patch.turnDeadline = turnDeadline;
+			await this.ctx.scheduler.runAt(turnDeadline, internal.court.turnTimeout, { roomId: this.room._id, turnDeadline });
+		} else if ('phase' in this.patch && !isTurnPhase(phase)) {
+			this.patch.turnDeadline = undefined;
+		}
 		if (Object.keys(this.patch).length) await this.ctx.db.patch(this.room._id, this.patch);
 	}
 }
@@ -179,6 +191,35 @@ async function open(ctx: MutationCtx, roomId: Id<'courtRooms'>, playerId: string
 	const room = await loadRoom(ctx, roomId);
 	const side = requireSeat(room, playerId);
 	return { room, side, s: new Session(ctx, room) };
+}
+
+/**
+ * Timbangan sementara, -100 (Jaksa unggul) sampai 100 (Penasihat Hukum unggul).
+ * Hanya dari tanggapan majelis yang sudah terbuka di berita acara.
+ */
+function momentum(log: Entry[], discredited: Set<string>) {
+	const { score } = tally(log as never, {}, discredited);
+	return Math.max(-100, Math.min(100, Math.round((score.defense - score.prosecution) * 6)));
+}
+
+/** Kalimat baku bila pemain tidak menulis apa pun. */
+function autoLine(argType: ArgType, suspect: string | undefined, cites: string[], t: CaseTools) {
+	const short = (k: string) => (k.includes('.') ? `keterangan ${t.case.public.witnesses[k.split('.')[0]]?.short ?? k}` : k);
+	const list = [...new Set(cites.map(short))];
+	const and = (xs: string[]) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} dan ${xs.at(-1)}`);
+	const who = t.name(suspect ?? t.case.public.accused);
+	switch (argType) {
+		case 'accuse':
+			return list.length ? `Yang Mulia, ${and(list)} menunjukkan ${who} pelakunya.` : `Yang Mulia, ${who} pelakunya.`;
+		case 'challenge':
+			return list.length > 1
+				? `Yang Mulia, ${list[0]} tidak dapat dipegang, mengingat ${and(list.slice(1))}.`
+				: `Yang Mulia, ${list[0] ?? 'bukti itu'} tidak dapat dipegang.`;
+		case 'contradiction':
+			return `Yang Mulia, ${list[0] ?? '…'} dan ${list[1] ?? '…'} tidak mungkin sama-sama benar.`;
+		case 'doubt':
+			return list.length ? `Yang Mulia, cerita lawan berlubang: ${and(list)}.` : 'Yang Mulia, cerita lawan penuh keraguan.';
+	}
 }
 
 // ---------- Query ----------
@@ -243,6 +284,9 @@ export const get = query({
 			budgets: room.budgets,
 			clarifications: room.clarifications,
 			closingDeadline: room.closingDeadline,
+			turnDeadline: room.turnDeadline,
+			shout: room.shout,
+			momentum: momentum(log, discredited),
 			onRecord: room.onRecord,
 			discredited: room.discredited,
 			contradictions: room.contradictions,
@@ -381,8 +425,12 @@ export const opening = mutation({
 	handler: async (ctx, { roomId, playerId, text }) => {
 		const { room, side, s } = await open(ctx, roomId, playerId);
 		if (room.phase !== 'briefing') throw new ConvexError('Tahap pernyataan pembuka sudah lewat');
-		const statement = cleanText(text, MAX_OPENING);
-		if (statement.length < 20) throw new ConvexError('Pernyataan pembuka terlalu pendek (minimal 20 karakter)');
+		// Boleh kosong: majelis mencatat pembuka singkat, supaya tak ada yang menunggu ketikan.
+		const statement =
+			cleanText(text, MAX_OPENING) ||
+			(side === 'defense'
+				? 'Yang Mulia, klien kami tidak bersalah. Kami akan menunjukkan keraguan yang wajar.'
+				: 'Yang Mulia, bukti akan menunjukkan terdakwa bersalah secara sah dan meyakinkan.');
 		const openings = { ...room.openings, [side]: statement };
 		s.patch.openings = openings;
 		if (openings.defense && openings.prosecution) {
@@ -436,9 +484,9 @@ export const argue = mutation({
 		if (!(args.argType in ARG_TYPES)) throw new ConvexError('Jenis argumen tidak dikenal');
 		const argType = args.argType as ArgType;
 		if (args.suspect && !(args.suspect in s.t.case.public.suspects)) throw new ConvexError('Tokoh tidak dikenal');
-		const text = cleanText(args.text);
-		if (text.length < 8) throw new ConvexError('Sampaikan argumen dalam satu atau dua kalimat');
 		const cites = [...new Set(args.cites)].slice(0, 5);
+		// Kalimat boleh kosong: majelis mencatat kalimat baku dari langkah dan kutipannya.
+		const text = cleanText(args.text) || autoLine(argType, args.suspect, cites, s.t);
 		for (const key of cites) if (!s.citable(side, key)) throw new ConvexError(`Tidak bisa mengutip ${key}`);
 		const backing = [...new Set(args.backing ?? [])].filter((k) => !cites.includes(k)).slice(0, 3);
 		for (const key of backing) {
@@ -630,6 +678,35 @@ export const demandProof = mutation({
 			});
 		}
 		await s.save();
+	}
+});
+
+/** Jam giliran habis: satu langkah hangus dan giliran berpindah. */
+export const turnTimeout = internalMutation({
+	args: { roomId: v.id('courtRooms'), turnDeadline: v.number() },
+	handler: async (ctx, { roomId, turnDeadline }) => {
+		const room = await ctx.db.get(roomId);
+		if (!room || room.turnDeadline !== turnDeadline || !isTurnPhase(room.phase) || !room.turn) return;
+		const side = room.turn;
+		if (room.budgets[side] <= 0) return;
+		const s = new Session(ctx, room);
+		await s.entry({ side: 'court', kind: 'note', text: `Waktu habis. ${SIDE_LABEL[side]} kehilangan satu langkah.` });
+		await s.spend(side);
+		await s.save();
+	}
+});
+
+/** "KEBERATAN!" dan kawan-kawan: hanya untuk suasana, tak mengubah apa pun di persidangan. */
+export const shout = mutation({
+	args: { roomId: v.id('courtRooms'), playerId: v.string(), kind: v.string() },
+	handler: async (ctx, { roomId, playerId, kind }) => {
+		const room = await loadRoom(ctx, roomId);
+		const side = requireSeat(room, playerId);
+		if (!(kind in SHOUTS)) throw new ConvexError('Teriakan tidak dikenal');
+		if (room.phase === 'waiting' || room.phase === 'verdict') return;
+		const now = Date.now();
+		if (room.shout && room.shout.side === side && now - room.shout.at < SHOUT_COOLDOWN_MS) return;
+		await ctx.db.patch(roomId, { shout: { side, kind, at: now } });
 	}
 });
 
@@ -878,6 +955,8 @@ export const again = mutation({
 			openings: {},
 			closings: {},
 			closingDeadline: undefined,
+			turnDeadline: undefined,
+			shout: undefined,
 			onRecord: publicIds(t),
 			discredited: [],
 			contradictions: [],

@@ -482,6 +482,10 @@ export default defineSchema({
 		openings: v.object({ defense: v.optional(v.string()), prosecution: v.optional(v.string()) }),
 		closings: v.object({ defense: v.optional(courtClosing), prosecution: v.optional(courtClosing) }),
 		closingDeadline: v.optional(v.number()),
+		/** Jam giliran: lewat dari ini, giliran hangus satu langkah. */
+		turnDeadline: v.optional(v.number()),
+		/** Teriakan terakhir ("KEBERATAN!"), ditampilkan sebentar di layar kedua pemain. */
+		shout: v.optional(v.object({ side: courtSide, kind: v.string(), at: v.number() })),
 		/** Evidence ids and testimony keys (e.g. 'dana.contact') both sides can see and cite. */
 		onRecord: v.array(v.string()),
 		discredited: v.array(v.object({ fact: v.string(), side: courtSide, seq: v.number() })),

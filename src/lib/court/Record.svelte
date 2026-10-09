@@ -89,6 +89,13 @@
 			{@const h = heading(e)}
 			{@const r = e.reaction as Reaction | undefined}
 			{@const newest = i === room.entries.length - 1}
+			{#if e.side === 'court' && e.kind === 'note'}
+				<!-- Court notes (phase changes, timeouts) are one quiet line, not a full entry. -->
+				<li class="note" class:timeout={e.text?.startsWith('Waktu habis')}>
+					<span class="seq">#{String(e.seq).padStart(2, '0')}</span>
+					{e.text}
+				</li>
+			{:else}
 			<li class="entry side-{e.side}" class:newest class:struck={e.status === 'exposed'} class:court={e.side === 'court'}>
 				<div class="head">
 					<span class="seq">#{String(e.seq).padStart(2, '0')}</span>
@@ -139,6 +146,7 @@
 					</div>
 				{/if}
 			</li>
+			{/if}
 		{/each}
 	</ol>
 	{#if unread}
@@ -288,5 +296,22 @@
 		display: flex;
 		gap: 6px;
 		margin-top: 6px;
+	}
+	.note {
+		font-family: var(--font-ui);
+		font-size: 10px;
+		letter-spacing: 0.06em;
+		color: var(--luck);
+		text-align: center;
+		padding: 2px 0;
+		border-top: 1px dashed var(--luck-deep);
+		border-bottom: 1px dashed var(--luck-deep);
+	}
+	.note .seq {
+		margin-right: 6px;
+	}
+	.note.timeout {
+		color: var(--ink-dim);
+		border-color: var(--rule);
 	}
 </style>
