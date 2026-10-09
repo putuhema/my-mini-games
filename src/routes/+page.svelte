@@ -5,6 +5,7 @@
 		CatIcon,
 		GavelIcon,
 		HamburgerIcon,
+		MicrophoneStageIcon,
 		PaintBrushIcon,
 		QuestionIcon,
 		SnakeIcon,
@@ -52,6 +53,14 @@
 			blurb: 'Satu membela, satu menuntut, masing-masing dengan bukti rahasia. Hakim AI memutus siapa yang berargumen lebih baik.',
 			ready: true
 		},
+		{
+			href: '/debate',
+			icon: MicrophoneStageIcon,
+			color: 'blue',
+			title: 'Debate Room',
+			blurb: 'One topic, two sides. Argue For or Against in three rounds, then an AI judge picks the winner.',
+			ready: true
+		}
 	];
 </script>
 

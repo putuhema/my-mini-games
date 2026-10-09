@@ -172,6 +172,37 @@ export const courtVerdict = v.object({
 	unresolved: v.array(v.string())
 });
 
+/** Debate Room: see convex/debate.ts. */
+export const debateSide = v.union(v.literal('pro'), v.literal('con'));
+export const debateRound = v.union(v.literal('opening'), v.literal('rebuttal'), v.literal('closing'));
+
+const debateScores = v.object({
+	logic: v.number(),
+	evidence: v.number(),
+	rebuttal: v.number(),
+	delivery: v.number()
+});
+
+const debateSideVerdict = v.object({
+	scores: debateScores,
+	/** Their best moment, quoted or paraphrased. */
+	best: v.string(),
+	/** What they missed or got wrong. */
+	missed: v.string(),
+	/** One thing to do better next time. */
+	tip: v.string()
+});
+
+export const debateVerdict = v.object({
+	winner: v.union(debateSide, v.literal('tie')),
+	by: v.union(v.literal('ai'), v.literal('fallback')),
+	summary: v.string(),
+	/** The exchange that decided it. */
+	turningPoint: v.string(),
+	pro: debateSideVerdict,
+	con: debateSideVerdict
+});
+
 export default defineSchema({
 	rooms: defineTable({
 		code: v.string(),
@@ -540,6 +571,40 @@ export default defineSchema({
 		ruling: v.optional(v.string()),
 		status: v.optional(v.union(v.literal('unverified'), v.literal('proven'), v.literal('exposed')))
 	}).index('by_roomId_and_trial', ['roomId', 'trial']),
+
+	/** Debate Room: two players argue one topic in three sealed rounds, then an AI judge scores them. */
+	debateRooms: defineTable({
+		code: v.string(),
+		phase: v.union(
+			/** One player so far. */
+			v.literal('waiting'),
+			/** Both here: pick the topic and sides. */
+			v.literal('lobby'),
+			debateRound,
+			v.literal('judging'),
+			v.literal('verdict')
+		),
+		players: v.array(v.object({ id: v.string(), name: v.string() })),
+		/** Who argues For the motion; the other player argues Against. */
+		proId: v.string(),
+		topic: v.string(),
+		/** Bumped by Play Again, so a late verdict can't land on the next debate. */
+		debate: v.number(),
+		/** The current round ends here; missing speeches count as silence. */
+		deadline: v.optional(v.number()),
+		/** This debate's speeches, at most one per side per round. The opponent's speech in the
+		 * current round stays sealed until both are in. */
+		speeches: v.array(v.object({ round: debateRound, side: debateSide, text: v.string(), at: v.number() })),
+		verdict: v.optional(debateVerdict),
+		history: v.array(
+			v.object({
+				topic: v.string(),
+				proName: v.string(),
+				conName: v.string(),
+				winner: v.union(debateSide, v.literal('tie'))
+			})
+		)
+	}).index('by_code', ['code']),
 
 	/** Web Push subscriptions, one per device, for turn reminders. */
 	pushSubscriptions: defineTable({

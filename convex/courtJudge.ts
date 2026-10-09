@@ -5,49 +5,8 @@ import { z } from 'zod';
 import { internal } from './_generated/api';
 import { internalAction } from './_generated/server';
 import { caseFor } from './court/cases';
+import { glm } from './glm';
 import { ARG_TYPES, BASE_TOPICS, SIDE_LABEL, type BaseTopic } from './court/rules';
-
-const ENDPOINT = 'https://api.z.ai/api/paas/v4/chat/completions';
-const MODEL = 'glm-5';
-
-/** Satu panggilan GLM-5 dalam mode JSON, divalidasi dengan zod. Null bila gagal. */
-async function glm<T extends z.ZodType>(
-	schema: T,
-	system: string,
-	user: string,
-	opts: { maxTokens: number; temperature: number; thinking: boolean }
-): Promise<z.infer<T> | null> {
-	const apiKey = process.env.ZAI_API_KEY;
-	if (!apiKey) return null;
-	const res = await fetch(ENDPOINT, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-		body: JSON.stringify({
-			model: MODEL,
-			messages: [
-				{
-					role: 'system',
-					content:
-						`${system}\n\nBalas HANYA dengan satu objek JSON yang sesuai JSON Schema berikut, tanpa teks lain:\n` +
-						JSON.stringify(z.toJSONSchema(schema))
-				},
-				{ role: 'user', content: user }
-			],
-			thinking: { type: opts.thinking ? 'enabled' : 'disabled' },
-			response_format: { type: 'json_object' },
-			max_tokens: opts.maxTokens,
-			temperature: opts.temperature
-		})
-	});
-	if (!res.ok) throw new Error(`GLM-5 ${res.status}: ${(await res.text()).slice(0, 300)}`);
-	const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-	const content = data.choices?.[0]?.message?.content;
-	if (!content) throw new Error('GLM-5 returned no content');
-	const json = content.replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
-	const parsed = schema.safeParse(JSON.parse(json));
-	if (!parsed.success) throw new Error(`GLM-5 output did not match: ${parsed.error.message.slice(0, 300)}`);
-	return parsed.data;
-}
 
 // ---------- Pertanyaan bebas ke saksi ----------
 
