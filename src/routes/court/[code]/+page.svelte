@@ -24,6 +24,7 @@
 	import { sfx, sound, toggleMute } from '#lib/sound.svelte.ts';
 	import Mek from '#lib/court/Mek.svelte';
 	import Bench from '#lib/court/Bench.svelte';
+	import Portrait from '#lib/court/Portrait.svelte';
 	import CourtRecord from '#lib/court/Record.svelte';
 	import Folder from '#lib/court/Folder.svelte';
 	import EvidenceTab from '#lib/court/EvidenceTab.svelte';
@@ -69,7 +70,7 @@
 	/** Big ruling stamp in the middle of the screen: KUAT!, DITOLAK!, GERTAKAN TERBONGKAR! */
 	let stamp = $state<{ label: string; tone: string; side: string; key: number }>();
 	/** The last shout, shown to both players. */
-	let shouting = $state<{ text: string; side: Side; key: number }>();
+	let shouting = $state<{ text: string; side: Side; kind: string; key: number }>();
 	let copied = $state(false);
 
 	type Tab = 'evidence' | 'timeline' | 'witness' | 'arguments';
@@ -127,7 +128,7 @@
 			lastShout = sh.at;
 			if (Date.now() + offset - sh.at > 4000) return;
 			const key = sh.at;
-			shouting = { text: SHOUTS[sh.kind as ShoutKind] ?? sh.kind, side: sh.side, key };
+			shouting = { text: SHOUTS[sh.kind as ShoutKind] ?? sh.kind, side: sh.side, kind: sh.kind, key };
 			if (sh.kind === 'keberatan' || sh.kind === 'kena') sfx.strike();
 			else sfx.whoosh();
 			setTimeout(() => shouting?.key === key && (shouting = undefined), 1500);
@@ -462,7 +463,7 @@
 		{:else}
 			<div class="court">
 				<div class="main">
-					<Bench {room} />
+					<Bench {room} urgent={live && turnLeft < 10000} />
 
 					<div class="status" class:mine={myTurn} class:urgent={live && turnLeft < 10000}>
 						<span class="phase micro">{phaseNumber}/6 · {PHASE_TITLE[room.phase]}</span>
@@ -641,6 +642,9 @@
 	{#if shouting}
 		{#key shouting.key}
 			<div class="shout from-{shouting.side}" role="status">
+				<span class="actor">
+					<Portrait who={shouting.side} size={112} mood={shouting.kind === 'hmm' ? 'think' : 'point'} talking />
+				</span>
 				<span class="who">{shouting.side === you ? 'Anda' : SIDE_LABEL[shouting.side]}</span>
 				<span class="text">{shouting.text}</span>
 			</div>
@@ -1004,6 +1008,13 @@
 		border: 6px solid currentColor;
 		box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.6);
 		rotate: -4deg;
+	}
+	.shout .actor {
+		padding: 6px;
+		background: var(--void);
+		border: 4px solid currentColor;
+		box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.6);
+		margin-bottom: 6px;
 	}
 	.shout .who {
 		font-family: var(--font-ui);

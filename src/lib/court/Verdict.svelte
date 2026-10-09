@@ -25,6 +25,14 @@
 	const guilty = $derived(v.verdict === 'guilty');
 
 	let revealed = $state(false);
+	// The judge brings the gavel down when the verdict lands.
+	let gaveling = $state(true);
+	$effect(() => {
+		const t = setTimeout(() => (gaveling = false), 1600);
+		return () => clearTimeout(t);
+	});
+	// Winners beam, losers sweat.
+	const winner = $derived<Side>(guilty ? 'prosecution' : 'defense');
 
 	const name = (side: Side) =>
 		room.players.find((p) => (side === 'defense' ? p.id === room.defenseId : p.id !== room.defenseId))?.name ?? '—';
@@ -52,7 +60,7 @@
 
 <section class="verdict">
 	<div class="banner" class:guilty>
-		<Portrait who="judge" size={84} />
+		<Portrait who="judge" size={84} mood={gaveling ? 'gavel' : 'idle'} talking={gaveling} />
 		<div>
 			<span class="eyebrow">{room.case.docket} · majelis menyatakan terdakwa</span>
 			<h1>{guilty ? 'BERSALAH' : 'BEBAS'}</h1>
@@ -71,6 +79,7 @@
 			{@const st = stats[side]}
 			<div class="panel side">
 				<header>
+					<Portrait who={side} size={40} mood={side === winner ? 'happy' : 'sweat'} />
 					<span class="eyebrow side-{side}">{SIDE_LABEL[side]} · {name(side)}</span>
 					<span class="score">{s.score}</span>
 				</header>
@@ -266,9 +275,12 @@
 	}
 	.side header {
 		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
+		align-items: center;
+		gap: 10px;
 		margin-bottom: 8px;
+	}
+	.side header .eyebrow {
+		flex: 1;
 	}
 	.score {
 		font-family: var(--font-ui);

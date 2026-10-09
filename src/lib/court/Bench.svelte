@@ -1,11 +1,97 @@
 <!-- The top of the courtroom: Defense, Judge, Prosecution, and the court's running balance beneath them. -->
 <script lang="ts">
-	import { isTurnPhase, paceFor, REACTION_META, SIDE_LABEL, type Reaction, type Side } from '../../../convex/court/rules';
-	import Portrait from './Portrait.svelte';
+	import { untrack } from 'svelte';
+	import { isTurnPhase, other, paceFor, REACTION_META, SIDE_LABEL, type Reaction, type Side } from '../../../convex/court/rules';
+	import Portrait, { type Mood } from './Portrait.svelte';
 	import Scales from './Scales.svelte';
 	import type { CourtView } from './types';
 
-	let { room }: { room: CourtView } = $props();
+	let { room, urgent = false }: { room: CourtView; /** The turn clock is nearly out. */ urgent?: boolean } = $props();
+
+	// ---- Faces: each seat reacts to what just happened, then settles back ----
+	type Seat = Side | 'judge';
+	let flash = $state<Partial<Record<Seat, { mood: Mood; until: number }>>>({});
+	let talk = $state<Partial<Record<Seat, number>>>({});
+	let clock = $state(Date.now());
+	$effect(() => {
+		const id = setInterval(() => (clock = Date.now()), 200);
+		return () => clearInterval(id);
+	});
+
+	function react(seat: Seat, mood: Mood, ms = 1800) {
+		flash = { ...flash, [seat]: { mood, until: Date.now() + ms } };
+	}
+	function speak(seat: Seat, ms = 1100) {
+		talk = { ...talk, [seat]: Date.now() + ms };
+	}
+
+	// What each ruling does to the speaker, their opponent and the judge.
+	const REACT: Partial<Record<Reaction, [self: Mood, them: Mood, judge: Mood]>> = {
+		contradiction: ['point', 'shock', 'gavel'],
+		strong: ['happy', 'sweat', 'nod'],
+		sustained: ['smug', 'sweat', 'gavel'],
+		proven: ['smug', 'shock', 'nod'],
+		accepted: ['happy', 'idle', 'nod'],
+		exposed: ['shock', 'smug', 'gavel'],
+		overruled: ['sweat', 'smug', 'stern'],
+		weak: ['sweat', 'smug', 'stern'],
+		revealed: ['think', 'think', 'gavel'],
+		unverified: ['smug', 'think', 'stern']
+	};
+
+	let seenSeq: number | undefined;
+	$effect(() => {
+		const entries = room.entries;
+		untrack(() => {
+			const newest = entries.at(-1)?.seq ?? 0;
+			if (seenSeq === undefined) return void (seenSeq = newest);
+			for (const e of entries.filter((x) => x.seq > seenSeq!)) {
+				if (e.side === 'court') {
+					speak('judge');
+					continue;
+				}
+				const self = e.side;
+				const them = other(self);
+				if (e.text) speak(self);
+				if (e.ruling) speak('judge', 1400);
+				if (e.kind === 'objection') react(self, 'point');
+				if ((e.kind === 'ask' || e.kind === 'confront') && e.pending) react(self, 'think', 2400);
+				const r = REACT[e.reaction as Reaction];
+				if (r) {
+					react(self, r[0]);
+					if (r[1] !== 'idle') react(them, r[1]);
+					react('judge', r[2], 1300);
+				}
+			}
+			seenSeq = newest;
+		});
+	});
+
+	// Shouts: the shouter points (or ponders); the other side flinches.
+	let seenShout: number | undefined;
+	$effect(() => {
+		const sh = room.shout;
+		untrack(() => {
+			if (seenShout === undefined) return void (seenShout = sh?.at ?? 0);
+			if (!sh || sh.at === seenShout) return;
+			seenShout = sh.at;
+			if (sh.kind === 'hmm') react(sh.side, 'think', 1600);
+			else {
+				react(sh.side, 'point', 1500);
+				react(other(sh.side), sh.kind === 'tunggu' ? 'sweat' : 'shock', 1500);
+			}
+			speak(sh.side, 900);
+		});
+	});
+
+	function moodOf(seat: Seat): Mood {
+		const f = flash[seat];
+		if (f && f.until > clock) return f.mood;
+		if (seat === 'judge') return room.phase === 'deliberating' ? 'sleep' : 'idle';
+		if (urgent && room.turn === seat) return 'sweat';
+		return 'idle';
+	}
+	const talking = (seat: Seat) => (talk[seat] ?? 0) > clock;
 
 	const name = (side: Side) =>
 		room.players.find((p) => (side === 'defense' ? p.id === room.defenseId : p.id !== room.defenseId))?.name ?? '—';
@@ -19,7 +105,7 @@
 	{#each ['defense', 'judge', 'prosecution'] as const as seat (seat)}
 		{#if seat === 'judge'}
 			<div class="seat judge">
-				<div class="portrait"><Portrait who="judge" size={44} speaking={room.phase === 'deliberating'} /></div>
+				<div class="portrait"><Portrait who="judge" size={52} mood={moodOf('judge')} talking={talking('judge')} /></div>
 				<div class="speech">
 					{#if room.phase === 'deliberating'}
 						<p>Majelis bermusyawarah<span class="blink">…</span></p>
@@ -37,7 +123,7 @@
 		{:else}
 			{@const turn = live && room.turn === seat}
 			<div class="seat {seat}" class:turn class:mine={room.you === seat}>
-				<div class="portrait"><Portrait who={seat} size={40} speaking={turn} /></div>
+				<div class="portrait"><Portrait who={seat} size={52} mood={moodOf(seat)} talking={talking(seat)} /></div>
 				<div class="who">
 					<span class="eyebrow side-{seat}" title={SIDE_LABEL[seat]}>{seat === 'defense' ? 'PEMBELA' : 'JAKSA'}</span>
 					<strong class="name">{name(seat)}{room.you === seat ? ' · Anda' : ''}</strong>
