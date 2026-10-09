@@ -664,6 +664,10 @@
 			/* Room for the turn outline on the bench. */
 			padding: 4px 8px 24px 4px;
 		}
+		/* Children keep their natural height; the column scrolls instead of squeezing them. */
+		.shell .main > :global(*) {
+			flex-shrink: 0;
+		}
 		.shell .side {
 			height: auto;
 			min-height: 0;

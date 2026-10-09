@@ -40,17 +40,42 @@
 	const canObject = (e: CourtEntry) =>
 		isTurnPhase(room.phase) && !!room.you && e.side !== 'court' && e.side !== room.you && e.status === 'unverified';
 
-	// Follow the newest line as the record grows — unless you've scrolled up to read.
-	// Scrolls only the log itself, never the page.
+	// Auto-scroll to new entries. Your own moves always scroll; the opponent's scroll too
+	// unless you've scrolled up to read, in which case a "new entries" button appears.
+	// Only the log scrolls, never the page.
 	let following = true;
+	let unread = $state(0);
+	let seenCount = 0;
+	const reduceMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+	function toBottom(smooth = true) {
+		list?.scrollTo({ top: list.scrollHeight, behavior: smooth && !reduceMotion ? 'smooth' : 'auto' });
+		following = true;
+		unread = 0;
+	}
+
+	// Watch the count and the newest entry's content: a witness answer fills in after the question appears.
+	const signature = $derived.by(() => {
+		const last = room.entries.at(-1);
+		return `${room.entries.length}:${last?.pending ?? ''}:${last?.answer?.length ?? 0}:${last?.status ?? ''}`;
+	});
 	$effect(() => {
-		void room.entries.length;
+		void signature;
+		const count = room.entries.length;
+		const fresh = room.entries.slice(seenCount);
+		const first = seenCount === 0;
+		seenCount = count;
 		tick().then(() => {
-			if (list && following) list.scrollTop = list.scrollHeight;
+			if (!list) return;
+			if (first) return toBottom(false);
+			if (following || fresh.some((e) => e.side === room.you)) toBottom();
+			else unread += fresh.length;
 		});
 	});
 	function onScroll() {
-		if (list) following = list.scrollTop + list.clientHeight >= list.scrollHeight - 40;
+		if (!list) return;
+		following = list.scrollTop + list.clientHeight >= list.scrollHeight - 40;
+		if (following) unread = 0;
 	}
 </script>
 
@@ -116,14 +141,25 @@
 			</li>
 		{/each}
 	</ol>
+	{#if unread}
+		<button class="jump btn small primary" onclick={() => toBottom()}>↓ {unread} entri baru</button>
+	{/if}
 </div>
 
 <style>
 	.record {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		min-height: 0;
 		padding: 12px 0 0;
+	}
+	.jump {
+		position: absolute;
+		left: 50%;
+		bottom: 12px;
+		translate: -50% 0;
+		box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
 	}
 	ol {
 		list-style: none;
