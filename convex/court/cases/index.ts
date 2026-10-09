@@ -4,9 +4,16 @@ import { bansos } from "./bansos";
 import { berlian } from "./berlian";
 import { lahan } from "./lahan";
 import { ijazahWagub } from "./ijazah";
+import { nasiGorengJam2 } from "./selingkuh";
 
-// Perkara latihan lebih dulu: lobi memilihnya untuk pemain baru.
-export const CASES = [amal, berlian, bansos, lahan, ijazahWagub];
+export const CASES = [
+  amal,
+  berlian,
+  bansos,
+  lahan,
+  ijazahWagub,
+  nasiGorengJam2,
+];
 export const DEFAULT_CASE = berlian.public.id;
 
 const cache = new Map<string, CaseTools>();
