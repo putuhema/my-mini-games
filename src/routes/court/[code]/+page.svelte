@@ -174,6 +174,24 @@
 
 	// ---- Moves ----
 	const item = $derived(room?.evidence.find((e) => e.id === selected));
+
+	// ---- Evidence folder: a floating card by default, or docked inline ----
+	let docked = $state(typeof localStorage !== 'undefined' && localStorage.getItem('court.folderDocked') === '1');
+	function toggleDock() {
+		docked = !docked;
+		localStorage.setItem('court.folderDocked', docked ? '1' : '0');
+	}
+	// Same order as the evidence tab: public, yours, theirs, court records.
+	const browsable = $derived.by(() => {
+		if (!room) return [];
+		const rank = (k: string) => (k === 'public' ? 0 : k === you ? 1 : k === 'hidden' ? 3 : 2);
+		return [...room.evidence].sort((a, b) => rank(a.kind) - rank(b.kind)).map((e) => e.id);
+	});
+	function step(dir: -1 | 1) {
+		if (!browsable.length) return;
+		const i = selected ? browsable.indexOf(selected) : -1;
+		selected = browsable[(i + dir + browsable.length) % browsable.length];
+	}
 	const canPresent = $derived(
 		!!item && myTurn && (room?.phase === 'evidence' || room?.phase === 'cross') && item.kind === you && !item.onRecord
 	);
@@ -250,7 +268,10 @@
 		else if (k === 'p' && canPresent) doPresent();
 		else if (k === 'q' && canClarify) doClarify();
 		else if (k === 'r' && myTurn) doRest();
-		else if (k === 'escape') goto('/court');
+		else if (k === 'escape') {
+			if (selected) selected = undefined;
+			else goto('/court');
+		} else if (selected && (k === 'arrowleft' || k === 'arrowright')) step(k === 'arrowleft' ? -1 : 1);
 		else if (item && notes && tab !== 'witness' && (k === '7' || k === '8' || k === '9')) notes.mark(item.id, ({ '7': 'key', '8': 'doubt', '9': 'lie' } as const)[k]);
 	}
 
@@ -279,6 +300,9 @@
 		}[room.phase as 'evidence' | 'witness' | 'cross'];
 	});
 
+	// The live courtroom: on desktop it fills the screen, the record stays put and only the left column scrolls.
+	const inCourt = $derived(!!room && !!you && room.phase !== 'waiting' && room.phase !== 'verdict');
+
 	const phaseNumber = $derived(
 		room ? ({ briefing: 1, evidence: 2, witness: 3, cross: 4, closing: 5, deliberating: 6, verdict: 6, waiting: 0 } as const)[room.phase] : 0
 	);
@@ -305,7 +329,7 @@
 {/snippet}
 
 <Mek>
-	<main class:wide={!!room && room.phase !== 'waiting'}>
+	<main class:wide={!!room && room.phase !== 'waiting'} class:shell={inCourt}>
 		<nav class="top">
 			<a class="btn small" href="/court"><kbd>ESC</kbd> Keluar</a>
 			<span class="micro docket">{room?.case.docket ?? ''}</span>
@@ -368,32 +392,32 @@
 				<CourtRecord {room} onDemandProof={() => {}} onCite={() => {}} onRespond={() => {}} />
 			</details>
 		{:else}
-			<Bench {room} />
-
-			<div class="phasebar">
-				<span class="eyebrow">Babak {phaseNumber}/6 · <b>{PHASE_TITLE[room.phase]}</b></span>
-				{#if live}
-					<span class="turn">
-						{#if myTurn}
-							<span class="marker"></span> <b>Giliran Anda</b> · sisa {room.budgets[you]} aksi
-						{:else}
-							Menunggu {room.turn ? SIDE_LABEL[room.turn] : ''}<span class="blink">_</span>
-						{/if}
-					</span>
-					<button class="btn small danger" disabled={!myTurn || busy} onclick={doRest}>Cukup <kbd>R</kbd></button>
-				{/if}
-			</div>
-			{#if guide}
-				<p class="guide" class:mine={myTurn}>
-					› {guide}
-					{#if openClaims.length}
-						<b>Klaim lawan {openClaims.map((n) => `#${n}`).join(', ')} belum terbukti — klik “Tuntut bukti” di berita acara bila Anda curiga gertakan.</b>
-					{/if}
-				</p>
-			{/if}
-
 			<div class="court">
 				<div class="main">
+					<Bench {room} />
+
+					<div class="phasebar">
+						<span class="eyebrow">Babak {phaseNumber}/6 · <b>{PHASE_TITLE[room.phase]}</b></span>
+						{#if live}
+							<span class="turn">
+								{#if myTurn}
+									<span class="marker"></span> <b>Giliran Anda</b> · sisa {room.budgets[you]} aksi
+								{:else}
+									Menunggu {room.turn ? SIDE_LABEL[room.turn] : ''}<span class="blink">_</span>
+								{/if}
+							</span>
+							<button class="btn small danger" disabled={!myTurn || busy} onclick={doRest}>Cukup <kbd>R</kbd></button>
+						{/if}
+					</div>
+					{#if guide}
+						<p class="guide" class:mine={myTurn}>
+							› {guide}
+							{#if openClaims.length}
+								<b>Klaim lawan {openClaims.map((n) => `#${n}`).join(', ')} belum terbukti — klik “Tuntut bukti” di berita acara bila Anda curiga gertakan.</b>
+							{/if}
+						</p>
+					{/if}
+
 					{#if room.phase === 'briefing'}
 						{@const done = you === 'defense' ? room.openings.defenseIn : room.openings.prosecutionIn}
 						{@const theyDone = you === 'defense' ? room.openings.prosecutionIn : room.openings.defenseIn}
@@ -446,17 +470,24 @@
 					{/if}
 
 					{#if notes && room.phase !== 'deliberating'}
-						<Folder
-							{room}
-							{item}
-							{notes}
-							cited={!!item && basket.some((c) => c.key === item.id)}
-							{canPresent}
-							{canClarify}
-							onPresent={doPresent}
-							onClarify={doClarify}
-							onCite={() => item && toggleCite(item.id)}
-						/>
+						{#if docked || item}
+							<Folder
+								{room}
+								{item}
+								{notes}
+								{docked}
+								position={item ? `${browsable.indexOf(item.id) + 1}/${browsable.length}` : ''}
+								cited={!!item && basket.some((c) => c.key === item.id)}
+								{canPresent}
+								{canClarify}
+								onPresent={doPresent}
+								onClarify={doClarify}
+								onCite={() => item && toggleCite(item.id)}
+								onClose={() => (selected = undefined)}
+								onStep={step}
+								onToggleDock={toggleDock}
+							/>
+						{/if}
 
 						<div class="tabs" role="tablist">
 							{#each TABS as t (t.id)}
@@ -469,7 +500,7 @@
 						</div>
 						<div class="panel tabpanel">
 							{#if tab === 'evidence'}
-								<EvidenceTab {room} {notes} {selected} basket={basket.map((c) => c.key)} onSelect={(id) => (selected = id)} />
+								<EvidenceTab {room} {notes} {selected} basket={basket.map((c) => c.key)} onSelect={(id) => (selected = selected === id ? undefined : id)} />
 							{:else if tab === 'timeline'}
 								<TimelineTab {room} {notes} />
 							{:else if tab === 'witness'}
@@ -597,11 +628,6 @@
 		gap: 16px;
 		align-items: start;
 	}
-	@media (max-width: 1000px) {
-		.court {
-			grid-template-columns: 1fr;
-		}
-	}
 	.main {
 		display: flex;
 		flex-direction: column;
@@ -609,19 +635,43 @@
 		min-width: 0;
 	}
 	.side {
-		position: sticky;
-		top: 12px;
-		height: calc(100dvh - 24px);
 		display: flex;
 		flex-direction: column;
+		height: 60dvh;
+		min-height: 320px;
 	}
 	.side :global(.record) {
 		flex: 1;
+		min-height: 0;
+	}
+
+	/* Desktop: a fixed-height shell. The record is a fixed column that scrolls on its own. */
+	@media (min-width: 1001px) {
+		main.shell {
+			height: 100dvh;
+			padding-bottom: 12px;
+			overflow: hidden;
+		}
+		.shell .court {
+			flex: 1;
+			min-height: 0;
+			grid-template-rows: minmax(0, 1fr);
+			align-items: stretch;
+		}
+		.shell .main {
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			/* Room for the turn outline on the bench. */
+			padding: 4px 8px 24px 4px;
+		}
+		.shell .side {
+			height: auto;
+			min-height: 0;
+		}
 	}
 	@media (max-width: 1000px) {
-		.side {
-			position: static;
-			height: 70dvh;
+		.court {
+			grid-template-columns: 1fr;
 		}
 	}
 

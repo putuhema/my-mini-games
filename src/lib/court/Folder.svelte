@@ -1,4 +1,4 @@
-<!-- The evidence folder in the middle of the courtroom: the item in hand and what you can do with it. -->
+<!-- The evidence folder: the item in hand and what you can do with it. Floats over the court by default; can be docked inline. -->
 <script lang="ts">
 	import type { CourtNotes, Mark } from './notes.svelte';
 	import type { CourtView, EvidenceItem } from './types';
@@ -12,7 +12,12 @@
 		canClarify,
 		onPresent,
 		onClarify,
-		onCite
+		onCite,
+		docked,
+		position,
+		onClose,
+		onStep,
+		onToggleDock
 	}: {
 		room: CourtView;
 		item?: EvidenceItem;
@@ -23,6 +28,12 @@
 		onPresent: () => void;
 		onClarify: () => void;
 		onCite: () => void;
+		docked: boolean;
+		/** "3/14": where the item sits in the evidence you can see. */
+		position: string;
+		onClose: () => void;
+		onStep: (dir: -1 | 1) => void;
+		onToggleDock: () => void;
 	} = $props();
 
 	const KIND = {
@@ -39,9 +50,19 @@
 	];
 </script>
 
-<div class="folder">
+<div class="folder" class:floating={!docked} role={docked ? undefined : 'dialog'} aria-label="Map barang bukti">
 	<div class="tab-ear">MAP BARANG BUKTI</div>
 	{#if item}
+		<div class="bar">
+			<button class="btn small" onclick={() => onStep(-1)} aria-label="Bukti sebelumnya"><kbd>←</kbd></button>
+			<span class="micro">{position}</span>
+			<button class="btn small" onclick={() => onStep(1)} aria-label="Bukti berikutnya"><kbd>→</kbd></button>
+			<span class="grow"></span>
+			<button class="btn small" onclick={onToggleDock} title={docked ? 'Jadikan jendela mengambang' : 'Tempel di halaman'}>
+				{docked ? 'Ambangkan' : 'Tempel'}
+			</button>
+			<button class="btn small" onclick={onClose} aria-label="Tutup">× <kbd>ESC</kbd></button>
+		</div>
 		<article class="inspect" class:struck={item.discredited}>
 			<header>
 				<span class="id kind-{item.kind}">{item.id}</span>
@@ -107,6 +128,64 @@
 		background: var(--luck-deep);
 		color: var(--parchment);
 		padding: 3px 10px;
+	}
+
+	.bar {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: 10px;
+	}
+	.grow {
+		flex: 1;
+	}
+
+	/* Floating card over the court: the record and tabs stay usable behind it. */
+	.floating {
+		position: fixed;
+		z-index: 40;
+		left: 50%;
+		bottom: 16px;
+		translate: -50% 0;
+		width: min(640px, calc(100vw - 32px));
+		max-height: min(72dvh, 680px);
+		overflow-y: auto;
+		box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.6);
+		animation: folder-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+	@keyframes folder-in {
+		from {
+			opacity: 0;
+			translate: -50% 12px;
+		}
+	}
+	/* Desktop: centre over the left column, clear of the court record. */
+	@media (min-width: 1001px) {
+		.floating {
+			left: calc(50% - 218px);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.floating {
+			animation: none;
+		}
+	}
+	@media (max-width: 720px) {
+		.floating {
+			left: 0;
+			right: 0;
+			bottom: 0;
+			translate: none;
+			width: auto;
+			max-height: 80dvh;
+			padding-bottom: calc(14px + env(safe-area-inset-bottom));
+		}
+		@keyframes folder-in {
+			from {
+				opacity: 0;
+				translate: 0 24px;
+			}
+		}
 	}
 
 	.inspect {

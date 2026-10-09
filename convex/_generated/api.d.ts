@@ -20,6 +20,7 @@ import type * as court_case from "../court/case.js";
 import type * as court_cases_amal from "../court/cases/amal.js";
 import type * as court_cases_bansos from "../court/cases/bansos.js";
 import type * as court_cases_berlian from "../court/cases/berlian.js";
+import type * as court_cases_ijazah from "../court/cases/ijazah.js";
 import type * as court_cases_index from "../court/cases/index.js";
 import type * as court_cases_lahan from "../court/cases/lahan.js";
 import type * as court_judge from "../court/judge.js";
@@ -56,6 +57,7 @@ declare const fullApi: ApiFromModules<{
   "court/cases/amal": typeof court_cases_amal;
   "court/cases/bansos": typeof court_cases_bansos;
   "court/cases/berlian": typeof court_cases_berlian;
+  "court/cases/ijazah": typeof court_cases_ijazah;
   "court/cases/index": typeof court_cases_index;
   "court/cases/lahan": typeof court_cases_lahan;
   "court/judge": typeof court_judge;

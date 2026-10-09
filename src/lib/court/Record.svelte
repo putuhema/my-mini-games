@@ -40,11 +40,18 @@
 	const canObject = (e: CourtEntry) =>
 		isTurnPhase(room.phase) && !!room.you && e.side !== 'court' && e.side !== room.you && e.status === 'unverified';
 
-	// Keep the newest line in view as the record grows.
+	// Follow the newest line as the record grows — unless you've scrolled up to read.
+	// Scrolls only the log itself, never the page.
+	let following = true;
 	$effect(() => {
 		void room.entries.length;
-		tick().then(() => list?.lastElementChild?.scrollIntoView({ block: 'nearest' }));
+		tick().then(() => {
+			if (list && following) list.scrollTop = list.scrollHeight;
+		});
 	});
+	function onScroll() {
+		if (list) following = list.scrollTop + list.clientHeight >= list.scrollHeight - 40;
+	}
 </script>
 
 <div class="record panel dark">
@@ -52,7 +59,7 @@
 	{#if !room.entries.length}
 		<p class="empty">> Berita acara masih kosong. Pernyataan pembuka lebih dulu.</p>
 	{/if}
-	<ol bind:this={list}>
+	<ol bind:this={list} onscroll={onScroll}>
 		{#each room.entries as e, i (e._id)}
 			{@const h = heading(e)}
 			{@const r = e.reaction as Reaction | undefined}
