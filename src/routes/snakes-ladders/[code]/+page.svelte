@@ -208,6 +208,7 @@
 	}
 	let bubbleCollapsed = $state(false);
 	let innerWidth = $state(1280);
+	let innerHeight = $state(800);
 	let fitWidth = $state(0);
 	let fitHeight = $state(0);
 
@@ -223,7 +224,8 @@
 		const height = fitHeight - CHIPS_HEIGHT - ring;
 		return Math.max(0, Math.min(fitWidth - ring, (height * columns) / rows));
 	});
-	const compact = $derived(innerWidth < 760);
+	// Phones in either orientation: small dice, roll bar instead of a tall sidebar.
+	const compact = $derived(innerWidth < 760 || innerHeight < 500);
 
 	// Re-open the bubble whenever a new question or phase comes in.
 	$effect(() => {
@@ -525,6 +527,7 @@
 
 <svelte:window
 	bind:innerWidth
+	bind:innerHeight
 	onkeydown={(e) => {
 		if (e.key === 'Escape') {
 			journalOpen = false;
@@ -572,8 +575,10 @@
 				<button class="stat-btn" onclick={() => (secretsOpen = true)} aria-label="Secret questions">
 					<Stat icon={HeartIcon} value={incoming} color="pink" label="Secret questions waiting for you" />
 				</button>
-				<Stat icon={FireIcon} value={streak} color="orange" label="Day streak" />
-				<Stat icon={StarIcon} value={xp} color="gold" label="Couple XP" />
+				<span class="extra-stats">
+					<Stat icon={FireIcon} value={streak} color="orange" label="Day streak" />
+					<Stat icon={StarIcon} value={xp} color="gold" label="Couple XP" />
+				</span>
 				<button class="stat-btn" onclick={() => (journalOpen = true)} aria-label="Open our answers">
 					<Stat icon={ChatCircleDotsIcon} value={answers.length} color="blue" label="Answers" />
 				</button>
@@ -1079,6 +1084,11 @@
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
+	}
+
+	/* Streak and XP also live in the answers drawer, so phones can drop them from the bar. */
+	.extra-stats {
+		display: contents;
 	}
 
 	.bell {
@@ -1757,6 +1767,143 @@
 		.side-status {
 			flex: 1;
 			gap: 0.1rem;
+		}
+
+		.side-status h2 {
+			font-size: 1.05rem;
+		}
+
+		.side-status p {
+			font-size: 0.8rem;
+		}
+
+		.big {
+			font-size: 2rem;
+		}
+	}
+
+	/* ---- Phones (portrait or landscape): the open question becomes a bottom sheet ---- */
+
+	@media (max-width: 760px), (max-height: 500px) {
+		.bubble:not(.collapsed),
+		.bubble.right:not(.collapsed) {
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 15;
+			width: auto;
+			max-width: 640px;
+			max-height: 78dvh;
+			margin: 0 auto;
+			overflow-y: auto;
+			overscroll-behavior: contain;
+			padding-bottom: calc(1.1rem + env(safe-area-inset-bottom));
+			border-bottom: none;
+			border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+			box-shadow: 0 calc(var(--depth) * -1) 0 var(--swan);
+			animation: sheet-up 0.3s var(--ease-out);
+		}
+
+		.bubble:not(.collapsed)::after {
+			display: none;
+		}
+
+		.bubble header {
+			position: sticky;
+			top: -1rem;
+			margin: -1rem -1.1rem 0;
+			padding: 1rem 1.1rem 0.25rem;
+			background: var(--snow);
+			z-index: 1;
+		}
+
+		.answer p {
+			max-height: none;
+		}
+	}
+
+	@keyframes sheet-up {
+		from {
+			transform: translateY(100%);
+		}
+	}
+
+	/* Landscape phones are short: dock the question on the right so the board stays visible. */
+	@media (max-height: 500px) and (min-width: 561px) {
+		.bubble:not(.collapsed),
+		.bubble.right:not(.collapsed) {
+			top: 0;
+			left: auto;
+			width: min(440px, 55vw);
+			max-height: none;
+			margin: 0;
+			padding-right: calc(1.1rem + env(safe-area-inset-right));
+			border-bottom: var(--border) solid var(--swan);
+			border-right: none;
+			border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+			box-shadow: calc(var(--depth) * -1) 0 0 var(--swan);
+			animation: sheet-left 0.3s var(--ease-out);
+		}
+	}
+
+	@keyframes sheet-left {
+		from {
+			transform: translateX(100%);
+		}
+	}
+
+	/* ---- Narrow phones: keep the top bar on one line ---- */
+
+	@media (max-width: 480px) {
+		.extra-stats {
+			display: none;
+		}
+
+		.stats {
+			gap: 0;
+		}
+
+		.code {
+			margin-left: 0.25rem;
+			padding: 0.4rem 0.6rem;
+			letter-spacing: 0.12em;
+		}
+	}
+
+	/* ---- Landscape phones: tighten everything vertically ---- */
+
+	@media (max-height: 500px) {
+		main.game {
+			padding: 0.35rem 0.75rem 0.5rem;
+		}
+
+		.topbar {
+			margin-bottom: 0.35rem;
+		}
+
+		.close,
+		.bell {
+			width: 2.1rem;
+			height: 2.1rem;
+		}
+
+		.stage {
+			grid-template-columns: minmax(0, 1fr) 220px;
+			gap: 0.75rem;
+		}
+
+		.board-col {
+			gap: 0.6rem;
+		}
+
+		.player {
+			padding: 0.3rem 0.55rem;
+		}
+
+		.sidebar {
+			padding: 0.75rem;
+			gap: 0.6rem;
 		}
 
 		.side-status h2 {
