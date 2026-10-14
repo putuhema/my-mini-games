@@ -211,9 +211,11 @@
 	let innerHeight = $state(800);
 	let fitWidth = $state(0);
 	let fitHeight = $state(0);
+	let chipsHeight = $state(0);
 
 	// Fill the available space: a tall 5-wide board on portrait screens, 10-wide otherwise.
-	const CHIPS_HEIGHT = 72; // chip row + gap under the board
+	// Player chip row + its gap under the board (measured; it is smaller on phones).
+	const CHIPS_HEIGHT = $derived(chipsHeight || 72);
 	// 100-tile boards are already square, so they always use the 10×10 grid.
 	const columns = $derived(
 		layout.size === 50 && fitHeight - CHIPS_HEIGHT > fitWidth * 1.1 ? 5 : COLUMNS
@@ -634,7 +636,7 @@
 	{:else}
 		<div class="stage">
 			<section class="board-area" bind:clientWidth={fitWidth} bind:clientHeight={fitHeight}>
-				<div class="board-col" style="width: {boardWidth}px">
+				<div class="board-col" style="width: {boardWidth}px; --chips-h: {CHIPS_HEIGHT}px">
 					{#if boardWidth > 0}
 						<Board
 							players={boardPlayers}
@@ -645,7 +647,7 @@
 						/>
 					{/if}
 
-					<div class="players">
+					<div class="players" bind:clientHeight={chipsHeight}>
 						{#each [0, 1] as i (i)}
 							{@const p = room.players[i]}
 							{@const tone = PLAYER_TONES[i]}
@@ -944,14 +946,14 @@
 					</Button>
 				{:else}
 					<div class="dice-wrap">
-						<Dice3D value={room.lastRoll ?? 1} {rollKey} {rolling} size={compact ? 72 : 170} />
+						<Dice3D value={room.lastRoll ?? 1} {rollKey} {rolling} size={compact ? 56 : 170} />
 					</div>
 					<div class="side-status">
 						<h2>{status.title}</h2>
 						<p class="muted">{status.sub}</p>
 					</div>
 					<Button
-						size="lg"
+						size={compact ? 'md' : 'lg'}
 						full={!compact}
 						disabled={busy || boardMoving || !diceSettled || !myTurn || room.phase !== 'roll'}
 						onclick={() => roll(room._id)}
@@ -1205,15 +1207,16 @@
 		position: relative;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
 	}
 
 	/* ---- Player cards ---- */
 
+	/* The gap above the chips is padding so it's included when the row is measured. */
 	.players {
 		display: flex;
 		justify-content: space-between;
 		gap: 1rem;
+		padding-top: 1rem;
 	}
 
 	.player {
@@ -1294,7 +1297,7 @@
 		--tail: 2.2rem;
 		position: absolute;
 		left: 0;
-		bottom: calc(3.6rem + 16px);
+		bottom: var(--chips-h);
 		z-index: 5;
 		width: min(460px, 100%);
 		display: flex;
@@ -1731,26 +1734,58 @@
 		.stage {
 			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: minmax(0, 1fr) auto;
-			gap: 0.75rem;
-		}
-
-		.player {
-			padding: 0.4rem 0.55rem;
 			gap: 0.5rem;
 		}
 
+		/* Every pixel of height here widens the tall board, so keep the chrome slim. */
+		.topbar {
+			margin-bottom: 0.4rem;
+		}
+
+		.close,
+		.bell {
+			width: 2.1rem;
+			height: 2.1rem;
+		}
+
+		.players {
+			gap: 0.5rem;
+			padding-top: 0.6rem;
+		}
+
+		.player {
+			width: 50%;
+			padding: 0.25rem 0.45rem;
+			gap: 0.4rem;
+			border-bottom-width: calc(var(--border) + var(--depth) - 1px);
+		}
+
 		.avatar {
-			width: 1.8rem;
-			height: 1.8rem;
+			width: 1.5rem;
+			height: 1.5rem;
+			font-size: 0.85rem;
+			box-shadow: 0 2px 0 var(--c-shade);
+		}
+
+		.who {
+			gap: 0.2rem;
+		}
+
+		.name-row strong {
+			font-size: 0.9rem;
 		}
 
 		.name-row small {
 			display: none;
 		}
 
+		.player :global(.track) {
+			height: 12px;
+			padding: 2px;
+		}
+
 		.bubble {
 			width: 100%;
-			bottom: calc(3.3rem + 14px);
 		}
 
 		.q-text {
@@ -1759,13 +1794,14 @@
 
 		.sidebar {
 			flex-direction: row;
-			padding: 0.6rem 0.9rem;
-			gap: 0.75rem;
+			padding: 0.4rem 0.75rem;
+			gap: 0.6rem;
 			text-align: left;
 		}
 
 		.side-status {
 			flex: 1;
+			min-width: 0;
 			gap: 0.1rem;
 		}
 
@@ -1775,6 +1811,12 @@
 
 		.side-status p {
 			font-size: 0.8rem;
+			line-height: 1.3;
+			display: -webkit-box;
+			-webkit-box-orient: vertical;
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+			overflow: hidden;
 		}
 
 		.big {
@@ -1893,8 +1935,8 @@
 			gap: 0.75rem;
 		}
 
-		.board-col {
-			gap: 0.6rem;
+		.players {
+			padding-top: 0.6rem;
 		}
 
 		.player {
